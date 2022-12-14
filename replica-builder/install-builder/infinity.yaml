@@ -1,0 +1,31 @@
+application:
+  name: Infinity
+  namespaces:
+    - name: holdings
+      mandatory-params:
+        configMaps:
+          - name: holdings-api-config
+            param: DATABASE_KEY
+          - name: holdings-api-config
+            param: POSTGRESQL_CONNECTIONURL
+        secrets:
+          - name: holdingsdbsecret
+            param: DB_PASS_ENCRYPTION_KEY
+          - name: holdingsdbsecret
+            param: PASSWORD
+          - name: holdingsdbsecret
+            param: USER_NAME
+    - name: party
+      mandatory-params:
+        configMaps:
+          - name: party-api-config
+            param: DATABASE_KEY
+          - name: party-api-config
+            param: POSTGRESQL_CONNECTIONURL
+        secrets:
+          - name: partydbsecret
+            param: DB_PASS_ENCRYPTION_KEY
+          - name: holdingsdbsecret
+            param: PASSWORD
+          - name: holdingsdbsecret
+            param: USER_NAME
