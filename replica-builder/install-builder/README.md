@@ -3,29 +3,33 @@ A Golang CLI tool to extract configurations from a live OpenShit/Kubernetes envi
 installer for the [replica-installer](../replica-installer/README.md) tool.
 
 ## Dependencies
-* Use [Konveyor crane](konveyor.io/tools/crane/) to export the original configuration and remove cluster specific settings 
+* Use [Konveyor crane](https://konveyor.io/tools/crane/) to export the original configuration and remove cluster specific settings 
 (e.g. IP addresses, status, ...)
 * Use [Konveyor move2kube](https://move2kube.konveyor.io/) to generate the [kustomize](https://kustomize.io/) installer 
 for the given environment 
 
 ## Features
 * The generated installer can replicate the resources of the original namespaces
-* The generated installer allows to override all the application parameters defined in the ConfigMap and Secrets (encrypted)
-* The generated installer is agnosti from the original namespaces
+* The generated installer allows to override all the application parameters defined in the `ConfigMap` and `Secrets` (encrypted)
+  * Original values fom all `ConfigMap`s are used as defaults but can be overridden individually
+    * We can identify mandatory properties whose values will not be copied to be reused but has to be overridden at 
+    installation time 
+  * Original values fom all `Secret`s are hidden and must be overridden at installation time
+* The generated installer is agnostic from the original namespaces
 
 ## Feature design
 * Based on a Golang application that runs the Konveyor CLI tools and performs post-execution manipulation
   * Externalize all the `ConfigMap` and `Secret` keys to allow the customizations of each single property or just use the 
-  default values
+  default values (for `ConfigMap`s only)
     * `oc extract` command is used for the purpose
-    * The base `kustomize` configuration re-creates the ConfigMaps and Secrets using files that are extracted from the
+    * The base `kustomize` configuration re-creates the `ConfigMap`s and Secrets using files that are extracted from the
     extracted configurations (1 file per key)
     * The `kustomize` overlays instead use a merged approach and can override only the needed keys using a properties
     file `custom.env`
   * Clear the reference to the original namespace
 
 **TODO**:
-* Export and encrypt the `Secret` values
+* Hide the `Secret` values
 * Manage mandatory params
   * Remove from defaults
   * Put in custom.env as__DEFAULT__
@@ -44,25 +48,16 @@ application:
   # This creates an installer package named APP
   name: APP
   namespaces:
-    - name: NS1
-      # No default values are generated for each of the following mandatory params
-      mandatory-params:
-        configMaps:
-          # Paramaters are given as a list of ConfigMap name and key values  
-          - name: MAP-1
-            param: PARAM-1
-          - name: "..."
-            param: "..."
-          - name: MAP-M
-            param: PARAM-N
-        secrets:
-          # Paramaters are given as a list of Secret name and key values  
-          - name: SECRET-1
-            param: PARAM-1
-          - name: "..."
-            param: "..."
-          - name: SECRET-M
-            param: PARAM-N
+  - name: NS1
+    # No default values are generated for each of the following mandatory params
+    mandatory-params:
+    # Provide the name of one of the exported ConfigMaps
+    - configMap: MAP-1
+      params:
+      # Paramaters are given as a list of key names  
+      - PARAM-1
+      - "..."
+      - PARAM-N
 ```
 
 ## Running the builder

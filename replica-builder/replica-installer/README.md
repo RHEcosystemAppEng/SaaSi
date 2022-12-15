@@ -7,7 +7,12 @@ installer for the [replica-installer](../replica-installer/README.md) tool.
   (e.g. IP addresses, status, ...)
 
 ## Installer configuration
-The `replica-installer` runs using a configuration that specifies the installation behavior:
+The `replica-installer` runs using a configuration to specify how to install the packaged configuration:
+* For each namespace we can define a target namespace name, reuse the original one or apply a common strategy to transform
+the initial name into the new one
+* For all the mandatory and optional parameters defined in `ConfigMaps`, we can define the desired value
+* For all the parameters defined as 1`Secret` keys, we must provide the desired value
+
 ```yaml
 application:
   # This creates an installer package named APP
@@ -16,26 +21,35 @@ application:
   # %s will be replaced with the original namespace name
   namespaceMappingFormat: "%s-prod"
   namespaces:
-    - name: NS1
-      # If missing, the namespaceMappingFormat or the original name are applied 
-      target: NEWNS1
-      params:
-        configMaps:
-          # Paramaters are given as a list of ConfigMap name and key values  
-          - name: MAP-1
-            param: PARAM-1
+  - name: NS1
+    # If missing, the namespaceMappingFormat or the original name are applied 
+    target: NEW-NS1
+    params:
+     - configMap: MAP-1
+        params:
+        - name: PARAM-1
+          value: VALUE-1
+        - name: "..."
+          value: "..."
+     - configMap: MAP-2
+         params:
+        - name: PARAM-1
+          value: VALUE-1
+       - name: "..."
+         value: "..."
+    secrets:
+      - secret: SECRET-1
+          params:
+          - name: PARAM-1
+            value: VALUE-1
           - name: "..."
-            param: "..."
-          - name: MAP-M
-            param: PARAM-N
-        secrets:
-          # Paramaters are given as a list of Secret name and key values  
-          - name: SECRET-1
-            param: PARAM-1
+            value: "..."
+      - configMap: SECRET-2
+          params:
+          - name: PARAM-1
+            value: VALUE-1
           - name: "..."
-            param: "..."
-          - name: SECRET-M
-            param: PARAM-N
+            value: "..."
 ```
 
 ## Running the installer

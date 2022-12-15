@@ -17,18 +17,13 @@ type Application struct {
 }
 
 type SourceNamespace struct {
-	Name            string          `yaml:"name"`
-	MandatoryParams MandatoryParams `yaml:"mandatory-params"`
-}
-
-type MandatoryParams struct {
-	ConfigMaps []MandatoryParam `yaml:"configMaps"`
-	Secrets    []MandatoryParam `yaml:"secrets"`
+	Name            string           `yaml:"name"`
+	MandatoryParams []MandatoryParam `yaml:"mandatory-params"`
 }
 
 type MandatoryParam struct {
-	ContainerName string `yaml:"name"`
-	ParamName     string `yaml:"param"`
+	ConfigMap string   `yaml:"configMap"`
+	Params    []string `yaml:"params"`
 }
 
 func ReadConfig(configFile string) *ApplicationConfig {
