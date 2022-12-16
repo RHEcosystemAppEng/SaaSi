@@ -19,13 +19,17 @@ for the given environment
 
 ## Feature design
 * Based on a Golang application that runs the Konveyor CLI tools and performs post-execution manipulation
-  * Externalize all the `ConfigMap` and `Secret` keys to allow the customizations of each single property or just use the 
-  default values (for `ConfigMap`s only)
+  * Externalize all the `ConfigMap` to allow the customizations of each single property or just use the 
+  default values
     * `oc extract` command is used for the purpose
-    * The base `kustomize` configuration re-creates the `ConfigMap`s and Secrets using files that are extracted from the
+    * The base `kustomize` configuration re-creates the `ConfigMap`s using files that are extracted from the
     extracted configurations (1 file per key)
     * The `kustomize` overlays instead use a merged approach and can override only the needed keys using a properties
     file `custom.env`
+  * Externalize all the keys in the managed `Secret`s and provide template files to be populated with actual values
+    * The base `kustomize` configuration does not re-create the `Secret`s, so this deployment would actually fail
+    * The `kustomize` overlays instead re-create the `Secret`s from the template files
+    * Errors must be raised while trying to install the default template for the secrets
   * Clear the reference to the original namespace
 
 **TODO**:
