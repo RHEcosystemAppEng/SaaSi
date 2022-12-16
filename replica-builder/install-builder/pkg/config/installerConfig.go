@@ -1,15 +1,16 @@
 package config
 
 import (
-	"fmt"
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 var ParamsFolder = "params"
 var SecretsFolder = "secrets"
-var NoSecretValue = "__EMPTY__"
+var NoValue = "__EMPTY__"
+var KustomizationFile = "kustomization.yaml"
 
 type InstallerConfig struct {
 	OutputFolder string
@@ -38,67 +39,61 @@ func (i *InstallerConfig) OutputFolderForNS(namespace string) string {
 	return filepath.Join(i.AppFolder, namespace, "output")
 }
 
-func (i *InstallerConfig) TmpParamsFolderForNS(namespace string) string {
-	tmpParamsFolder := filepath.Join(i.AppFolder, namespace, ParamsFolder)
-	if _, err := os.Stat(tmpParamsFolder); os.IsNotExist(err) {
-		if err := os.Mkdir(tmpParamsFolder, os.ModePerm); err != nil {
-			log.Fatalf("Cannot create %v folder: %v", tmpParamsFolder, err)
+func (i *InstallerConfig) lookupOrCreateFolder(path ...string) string {
+	fullPath := ""
+	if strings.HasPrefix(path[0], i.AppFolder) {
+		fullPath = filepath.Join(path...)
+	} else {
+		fullPath = filepath.Join(append([]string{i.AppFolder}, path...)...)
+	}
+	if _, err := os.Stat(fullPath); os.IsNotExist(err) {
+		if err := os.MkdirAll(fullPath, os.ModePerm); err != nil {
+			log.Fatalf("Cannot create %v folder: %v", fullPath, err)
 		}
 	}
-	return tmpParamsFolder
+	return fullPath
+}
+
+func (i *InstallerConfig) TmpParamsFolderForNS(namespace string) string {
+	return i.lookupOrCreateFolder(namespace, ParamsFolder)
 }
 
 func (i *InstallerConfig) TmpSecretsFolderForNS(namespace string) string {
-	tmpSecretsFolder := filepath.Join(i.AppFolder, namespace, SecretsFolder)
-	if _, err := os.Stat(tmpSecretsFolder); os.IsNotExist(err) {
-		if err := os.Mkdir(tmpSecretsFolder, os.ModePerm); err != nil {
-			log.Fatalf("Cannot create %v folder: %v", tmpSecretsFolder, err)
-		}
-	}
-	return tmpSecretsFolder
+	return i.lookupOrCreateFolder(namespace, SecretsFolder)
 }
 
 func (i *InstallerConfig) TmpParamsFolderForConfigMap(namespace string, configmap string) string {
-	tmpParamsFolder := filepath.Join(i.TmpParamsFolderForNS(namespace), configmap)
-	if _, err := os.Stat(tmpParamsFolder); os.IsNotExist(err) {
-		if err := os.Mkdir(tmpParamsFolder, os.ModePerm); err != nil {
-			log.Fatalf("Cannot create %v folder: %v", tmpParamsFolder, err)
-		}
-	}
-	return tmpParamsFolder
+	return i.lookupOrCreateFolder(i.TmpParamsFolderForNS(namespace), configmap)
 }
 
 func (i *InstallerConfig) InstallerFolder() string {
-	installerFolder := filepath.Join(i.AppFolder, "installer")
-	if _, err := os.Stat(installerFolder); os.IsNotExist(err) {
-		if err := os.Mkdir(installerFolder, os.ModePerm); err != nil {
-			log.Fatalf("Cannot create %v folder: %v", installerFolder, err)
-		}
-	}
-	return installerFolder
+	return i.lookupOrCreateFolder("installer")
 }
 
 func (i *InstallerConfig) kustomizeFolderForNS(namespace string) string {
-	return filepath.Join(i.InstallerFolder(), namespace, "source", "resources", fmt.Sprintf("%s-versionchanged-parameterized", namespace),
-		"kustomize")
+	return i.lookupOrCreateFolder(i.InstallerFolder(), "kustomize", namespace)
+}
+
+func (i *InstallerConfig) KustomizationFileFrom(folder string) string {
+	return filepath.Join(folder, KustomizationFile)
 }
 
 func (i *InstallerConfig) BaseKustomizeFolderForNS(namespace string) string {
-	return filepath.Join(i.kustomizeFolderForNS(namespace), "base")
+	return i.lookupOrCreateFolder(i.kustomizeFolderForNS(namespace), "base")
 }
 
-func (i *InstallerConfig) KustomizeOverlaysFolderForNS(namespace string) string {
-	return filepath.Join(i.kustomizeFolderForNS(namespace), "overlays")
-}
-
-func (i *InstallerConfig) KustomizationFileFrom(root string) string {
-	return filepath.Join(root, "kustomization.yaml")
+func (i *InstallerConfig) KustomizeTemplateFolderForNS(namespace string) string {
+	return i.lookupOrCreateFolder(i.kustomizeFolderForNS(namespace), "template")
 }
 
 func (i *InstallerConfig) KustomizeParamsFolderForNS(namespace string) string {
-	return filepath.Join(i.BaseKustomizeFolderForNS(namespace), ParamsFolder)
+	return i.lookupOrCreateFolder(i.BaseKustomizeFolderForNS(namespace), ParamsFolder)
+}
+
+func (i *InstallerConfig) KustomizeTemplateParamsFolderForNS(namespace string) string {
+	return i.lookupOrCreateFolder(i.KustomizeTemplateFolderForNS(namespace), ParamsFolder)
 }
 
 func (i *InstallerConfig) KustomizeSecretsFolderForNS(namespace string) string {
-	return filepath.Join(i.KustomizeOverlaysFolderForNS(namespace), SecretsFolder)
+	return i.lookupOrCreateFolder(i.KustomizeTemplateFolderForNS(namespace), SecretsFolder)
 }

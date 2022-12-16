@@ -107,6 +107,12 @@ func (p *Parametrizer) extractConfigMap(configMapFile string, configMap *v1.Conf
 	tmpParamsFolder := p.installerConfig.TmpParamsFolderForConfigMap(configMap.Namespace, configMap.Name)
 	RunCommand("oc", "extract", "-f", configMapFile, "--to", tmpParamsFolder)
 
+	templateFile := filepath.Join(tmpParamsFolder, fmt.Sprintf("%s.env", configMap.Name))
+	os.Create(templateFile)
+	for key := range configMap.Data {
+		AppendToFile(templateFile, fmt.Sprintf("#%s=%s\n", key, config.NoValue))
+	}
+
 	os.Rename(configMapFile, BackupFile(configMapFile))
 }
 
@@ -121,7 +127,7 @@ func (p *Parametrizer) handleSecret(secretFile string, secret *v1.Secret) {
 		log.Printf("Creating secret configuration template %s", secretsFile)
 
 		for key, _ := range secret.Data {
-			AppendToFile(secretsFile, fmt.Sprintf("%s=%s\n", key, config.NoSecretValue))
+			AppendToFile(secretsFile, fmt.Sprintf("%s=%s\n", key, config.NoValue))
 		}
 	}
 	os.Rename(secretFile, BackupFile(secretFile))

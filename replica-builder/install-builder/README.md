@@ -77,6 +77,53 @@ go run main.go myapp.yaml
 
 The command creates an `output/<APP NAME>/installer` folder in the current directory with the whole installer package.
 
+### Output specification
+The `installer/kustomize` folder contains the base configuration and an overlay template for each of the configured 
+namespaces:
+```bash
+├── output
+│   └── "APPLICATION"
+│       └── installer
+│           └── kustomize
+│               └── "NAMESPACE1"
+│                   ├── base
+│                   │   ├── "RESOURCE1.yaml"
+│                   │   ├── "RESOURCE2.yaml"
+│                   │   ├── kustomization.yaml
+│                   │   └── params
+│                   │       ├── "CONFIG_MAP1"
+│                   │       │   ├── "KEY1"
+│                   │       │   └── "KEY2"
+│                   │       └── "CONFIG_MAP2"
+│                   │           ├── "KEY1"
+│                   │           └── "KEY2"
+│                   └── template
+│                       ├── kustomization.yaml
+│                       ├── params
+│                       │   ├── "CONFIG_MAP1.env"
+│                       │   └── "CONFIG_MAP2.env"
+│                       └── secrets
+│                           └── "SECRET1.env"
+```
+
+The `base` kustomization contains the resources extracted from the source cluster and the parameters needed to rebuild the 
+`ConfigMap`s using the content of the `params` folder:
+```bash
+> cat output/Infinity/installer/kustomize/holdings/base/params/CONFIG_MAP1/KEY1
+VALUE1
+```
+
+The `template` overlay is an example of a possible `kustomize` overlay, with skeletons of environment files to override the
+`ConfigMap`s parameters (remove the `#` comment and set the desired value) and all the `Secret` values:
+```bash
+> cat output/Infinity/installer/kustomize/holdings/template/params/CONFIG_MAP1.env
+#KEY1=__EMPTY
+#KEY2=__EMPTY
+
+> cat output/Infinity/installer/kustomize/holdings/template/secrets/SECRET1.env
+KEY1=__EMPTY
+```
+
 ## Open points
 * Which permissions are needed to export
 * Parametrize overlay names:

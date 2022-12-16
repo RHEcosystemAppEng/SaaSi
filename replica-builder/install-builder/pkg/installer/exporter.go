@@ -27,10 +27,10 @@ func validateRequirements() {
 		log.Fatal("crane command not found")
 	}
 
-	_, err = exec.LookPath("move2kube")
-	if err != nil {
-		log.Fatal("move2kube command not found")
-	}
+	// _, err = exec.LookPath("move2kube")
+	// if err != nil {
+	// 	log.Fatal("move2kube command not found")
+	// }
 
 	_, err = exec.LookPath("oc")
 	if err != nil {

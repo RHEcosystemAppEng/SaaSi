@@ -26,6 +26,5 @@ func main() {
 	parametrizer.ExposeParameters()
 
 	installer := installer.NewInstallerFromConfig(appConfig, exporterConfig)
-	installer.BuildInstallerWithMove2Kube()
-	installer.UpdateKustomize()
+	installer.BuildKustomizeInstaller()
 }
