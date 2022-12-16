@@ -69,6 +69,9 @@ func (p *Parametrizer) ExposeParameters() {
 				if gKV.Kind == "ConfigMap" {
 					configMap := obj.(*v1.ConfigMap)
 					p.extractConfigMap(yamlFile, configMap)
+				} else if gKV.Kind == "Secret" {
+					secret := obj.(*v1.Secret)
+					p.handleSecret(yamlFile, secret)
 				} else {
 					value := reflect.Indirect(reflect.ValueOf(obj))
 					ns := value.FieldByName("Namespace")
@@ -105,4 +108,21 @@ func (p *Parametrizer) extractConfigMap(configMapFile string, configMap *v1.Conf
 	RunCommand("oc", "extract", "-f", configMapFile, "--to", tmpParamsFolder)
 
 	os.Rename(configMapFile, BackupFile(configMapFile))
+}
+
+func (p *Parametrizer) handleSecret(secretFile string, secret *v1.Secret) {
+	log.Printf("Handling Secret %s", secret.Name)
+	if secret.Type != "Opaque" {
+		log.Printf("Removing non-Opaque Secret %s", secret.Name)
+	} else {
+		tmpSecretsFolder := p.installerConfig.TmpSecretsFolderForNS(secret.Namespace)
+		secretsFile := filepath.Join(tmpSecretsFolder, fmt.Sprintf("%s.env", secret.Name))
+		os.Create(secretsFile)
+		log.Printf("Creating secret configuration template %s", secretsFile)
+
+		for key, _ := range secret.Data {
+			AppendToFile(secretsFile, fmt.Sprintf("%s=%s\n", key, config.NoSecretValue))
+		}
+	}
+	os.Rename(secretFile, BackupFile(secretFile))
 }

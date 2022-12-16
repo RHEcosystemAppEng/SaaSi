@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/RHEcosystemAppEng/SaaSi/replica-builder/install-builder/pkg/config"
 )
@@ -35,6 +36,7 @@ func (i *Installer) UpdateKustomize() {
 	i.updateKustomizeBase()
 	i.updateKustomizeOverlays()
 }
+
 func (i *Installer) updateKustomizeBase() {
 	for _, ns := range i.appConfig.Application.Namespaces {
 		log.Printf("Updating kustomize base for NS %s", ns.Name)
@@ -69,7 +71,6 @@ func (i *Installer) updateKustomizeBase() {
 							}
 							if !d.IsDir() {
 								keyName := d.Name()
-								log.Printf("Creating configMapGenerator for %s", configMap)
 								text = "\n" +
 									"  - params/%s/%s"
 								AppendToFile(baseKustomization, text, configMap, keyName)
@@ -97,7 +98,10 @@ func (i *Installer) updateKustomizeOverlays() {
 				}
 				if d.IsDir() && path != overlaysFolder {
 					log.Printf("Updating overlay %s", d.Name())
+					secretsFolder := filepath.Join(path, config.SecretsFolder)
+					os.Rename(i.installerConfig.TmpSecretsFolderForNS(ns.Name), secretsFolder)
 					kustomization := i.installerConfig.KustomizationFileFrom(path)
+
 					text := "generatorOptions:\n" +
 						"  disableNameSuffixHash: true\n" +
 						"configMapGenerator:"
@@ -120,6 +124,27 @@ func (i *Installer) updateKustomizeOverlays() {
 							}
 							return nil
 						})
+					if err == nil {
+						text := "\nsecretGenerator:"
+						AppendToFile(kustomization, text)
+						err = filepath.WalkDir(secretsFolder,
+							func(path string, d fs.DirEntry, err error) error {
+								if err != nil {
+									return err
+								}
+								if !d.IsDir() {
+									secret := strings.Replace(d.Name(), ".env", "", 1)
+									log.Printf("Creating secretGenerator for %s", secret)
+									text = "\n" +
+										"- name: %s\n" +
+										"  behavior: create\n" +
+										"  envs:\n" +
+										"  - %s/%s"
+									AppendToFile(kustomization, text, secret, config.SecretsFolder, d.Name())
+								}
+								return nil
+							})
+					}
 				}
 				return err
 			})
