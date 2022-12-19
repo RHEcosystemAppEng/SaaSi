@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"reflect"
 
+	"golang.org/x/exp/slices"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/cli-runtime/pkg/printers"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -112,12 +113,27 @@ func (p *Parametrizer) handleConfigMap(configMapFile string, configMap *v1.Confi
 	tmpParamsFolder := p.installerConfig.TmpParamsFolderForNS(configMap.Namespace)
 	// RunCommand("oc", "extract", "-f", configMapFile, "--to", tmpParamsFolder)
 
+	mandatoryParams := p.appConfig.MandatoryParamsByNSAndConfigMap(configMap.Namespace, configMap.Name)
+
 	templateFile := filepath.Join(tmpParamsFolder, fmt.Sprintf("%s.env", configMap.Name))
 	os.Create(templateFile)
 	for key := range configMap.Data {
-		AppendToFile(templateFile, fmt.Sprintf("#%s=%s\n", key, config.NoValue))
+		if slices.Contains(mandatoryParams, key) {
+			AppendToFile(templateFile, fmt.Sprintf("%s=%s\n", key, config.MandatoryValue))
+		} else {
+			AppendToFile(templateFile, fmt.Sprintf("#%s=%s\n", key, config.NoValue))
+		}
+
 	}
 
+	for _, mandatoryParam := range mandatoryParams {
+		if _, ok := configMap.Data[mandatoryParam]; ok {
+			log.Printf("Removing mandatory param %s from %s", mandatoryParam, configMap.Name)
+			delete(configMap.Data, mandatoryParam)
+		} else {
+			log.Fatalf("The mandatory parameter %s for ConfigMap %s does not exist", mandatoryParam, configMap.Name)
+		}
+	}
 	p.resetNamespace(configMap, configMapFile)
 	// os.Rename(configMapFile, BackupFile(configMapFile))
 }

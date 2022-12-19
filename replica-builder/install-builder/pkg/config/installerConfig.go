@@ -10,6 +10,7 @@ import (
 var ParamsFolder = "params"
 var SecretsFolder = "secrets"
 var NoValue = "__EMPTY__"
+var MandatoryValue = "__MANDATORY__"
 var KustomizationFile = "kustomization.yaml"
 
 type InstallerConfig struct {

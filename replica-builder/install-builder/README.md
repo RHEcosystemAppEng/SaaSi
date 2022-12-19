@@ -23,24 +23,13 @@ for the given environment
   * Clear the reference to the original namespace
   * Create a sample `template` for the overlayed configuration where the developer can apply customizations
     * All the keys in any given `ConfigMap` can be overridden in properties files called `CONFIGMAP_NAME.env`
-      * The skeleton of these files are automatically generated with all the key names commented out 
+      * The skeleton of these files are automatically generated
+      * All the key names for non-mandatory parameters are commented out and set to `__EMPTY__` value
+      * For mandatory parameters, the keys are set to `__MANDATORY__` value 
     * All the keys in the managed `Secret`s are customizable in the same way
       * The `template` overlay re-creates the `Secret`s from the template files called `SECRET_NAME.env`
       * The base `kustomize` configuration does not re-create the `Secret`s, so its deployment would actually fail
       * Errors must be raised while trying to install the default template for the secrets
-
-**TODO**:
-* [Handle `Secret` securely ](https://github.com/zvigrinberg/handle-secrets-with-kustomize/blob/main/README.md)
-* Manage mandatory params
-  * Remove from copied ConfigMaps
-  * Put in custom.env as__DEFAULT__
-* Handle properties that are not managed as ConfigMap/Secret keys
-* Export of cluster-wide resources
-* Filter out automatically created resources (e.g., some RoleBindings)
-* Management of OpenShift resources (e.g. Route)
-* Consider cross-namespace references (e.g. a Service URL like "<svc name>.<ns-name>")
-* Skip `kubernetes.io/service-account-token` Secrets
-* Manage image registries
 
 ## Builder configuration
 The `install-builder` runs using a configuration that specifies the packaging behavior: 
@@ -103,11 +92,12 @@ The `template` overlay is an example of a possible `kustomize` overlay, with ske
 `ConfigMap`s parameters (remove the `#` comment and set the desired value) and all the `Secret` values:
 ```bash
 > cat output/Infinity/installer/kustomize/holdings/template/params/CONFIG_MAP1.env
-#KEY1=__EMPTY
-#KEY2=__EMPTY
+#KEY1=__EMPTY__
+#KEY2=__EMPTY__
+KEY3=__MANDATORY__
 
 > cat output/Infinity/installer/kustomize/holdings/template/secrets/SECRET1.env
-KEY1=__EMPTY
+KEY1=__EMPTY__
 ```
 
 ## Customize and install the template
@@ -133,3 +123,13 @@ kustomize build . | oc apply -f-
     * [customplugins](https://konveyor.github.io/crane/tools/customplugins/)
 * What if there are Jobs needed to run before installing the app? (e.g., dbinit)
 * Convert/adapt cluster versions (e.g. adapt to different K8s API versions)
+
+**TODOs**:
+* [Handle `Secret` securely ](https://github.com/zvigrinberg/handle-secrets-with-kustomize/blob/main/README.md)
+* Handle properties that are not managed as ConfigMap/Secret keys
+* Export of cluster-wide resources
+* Filter out automatically created resources (e.g., some RoleBindings)
+* Management of OpenShift resources (e.g. Route)
+* Consider cross-namespace references (e.g. a Service URL like "<svc name>.<ns-name>")
+* Skip `kubernetes.io/service-account-token` Secrets
+* Manage image registries
