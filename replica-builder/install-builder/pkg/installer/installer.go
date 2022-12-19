@@ -47,68 +47,16 @@ func (i *Installer) BuildKustomizeInstaller() {
 		// RunCommand("move2kube", "transform", "--qa-skip", "true", "--output", i.installerConfig.InstallerFolder())
 	}
 
-	i.updateKustomizeBase()
 	i.createKustomizeTemplate()
-}
-
-func (i *Installer) updateKustomizeBase() {
-	for _, ns := range i.appConfig.Application.Namespaces {
-		log.Printf("Updating kustomize base for NS %s", ns.Name)
-		baseFolder := i.installerConfig.BaseKustomizeFolderForNS(ns.Name)
-		baseKustomization := i.installerConfig.KustomizationFileFrom(baseFolder)
-		text := "\ngeneratorOptions:\n" +
-			"  disableNameSuffixHash: true\n" +
-			"configMapGenerator:"
-		AppendToFile(baseKustomization, text)
-
-		baseKustomizeFolder := i.installerConfig.BaseKustomizeFolderForNS(ns.Name)
-		log.Printf("Rename %s to %s", i.installerConfig.TmpParamsFolderForNS(ns.Name), filepath.Join(baseKustomizeFolder, config.ParamsFolder))
-		os.Rename(i.installerConfig.TmpParamsFolderForNS(ns.Name), filepath.Join(baseKustomizeFolder, config.ParamsFolder))
-		paramsFolder := i.installerConfig.KustomizeParamsFolderForNS(ns.Name)
-
-		err := filepath.WalkDir(paramsFolder,
-			func(path string, d fs.DirEntry, err error) error {
-				if err != nil {
-					return err
-				}
-				if d.IsDir() && path != paramsFolder {
-					configMap := d.Name()
-					log.Printf("Creating configMapGenerator for %s", configMap)
-					text = "\n" +
-						"- name: %s\n" +
-						"  behavior: create\n" +
-						"  files:"
-					AppendToFile(baseKustomization, text, configMap)
-
-					err = filepath.WalkDir(path,
-						func(path string, d fs.DirEntry, err error) error {
-							if err != nil {
-								return err
-							}
-							if !d.IsDir() {
-								keyName := d.Name()
-								text = "\n" +
-									"  - %s/%s/%s"
-								AppendToFile(baseKustomization, text, config.ParamsFolder, configMap, keyName)
-							}
-							return nil
-						})
-				}
-				return err
-			})
-		if err != nil {
-			log.Fatalf("Cannot customize the base kustomize configuration: %s", err)
-		}
-	}
 }
 
 func (i *Installer) createKustomizeTemplate() {
 	for _, ns := range i.appConfig.Application.Namespaces {
 		log.Printf("Creating kustomize template for NS %s", ns.Name)
 		templateFolder := i.installerConfig.KustomizeTemplateFolderForNS(ns.Name)
-		baseParamsFolder := i.installerConfig.KustomizeParamsFolderForNS(ns.Name)
 
-		paramsFolder := i.installerConfig.KustomizeTemplateParamsFolderForNS(ns.Name)
+		paramsFolder := filepath.Join(templateFolder, config.ParamsFolder)
+		os.Rename(i.installerConfig.TmpParamsFolderForNS(ns.Name), paramsFolder)
 		secretsFolder := filepath.Join(templateFolder, config.SecretsFolder)
 		os.Rename(i.installerConfig.TmpSecretsFolderForNS(ns.Name), secretsFolder)
 
@@ -122,14 +70,13 @@ func (i *Installer) createKustomizeTemplate() {
 			"  disableNameSuffixHash: true\n" +
 			"configMapGenerator:"
 		AppendToFile(templateKustomization, text)
-		err := filepath.WalkDir(baseParamsFolder,
+		err := filepath.WalkDir(paramsFolder,
 			func(path string, d fs.DirEntry, err error) error {
 				if err != nil {
 					return err
 				}
-				if d.IsDir() && path != baseParamsFolder {
-					configMap := d.Name()
-					customFileName := fmt.Sprintf("%s.env", configMap)
+				if !d.IsDir() {
+					configMap := strings.Replace(d.Name(), ".env", "", 1)
 
 					log.Printf("Creating configMapGenerator for %s", configMap)
 					text = "\n" +
@@ -137,10 +84,7 @@ func (i *Installer) createKustomizeTemplate() {
 						"  behavior: merge\n" +
 						"  envs:\n" +
 						"  - %s/%s"
-					AppendToFile(templateKustomization, text, configMap, config.ParamsFolder, customFileName)
-
-					customFile := filepath.Join(paramsFolder, customFileName)
-					os.Rename(filepath.Join(path, customFileName), customFile)
+					AppendToFile(templateKustomization, text, configMap, config.ParamsFolder, d.Name())
 				}
 				return nil
 			})

@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"reflect"
 
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/cli-runtime/pkg/printers"
 	"k8s.io/client-go/kubernetes/scheme"
 
@@ -68,44 +69,48 @@ func (p *Parametrizer) ExposeParameters() {
 			} else {
 				if gKV.Kind == "ConfigMap" {
 					configMap := obj.(*v1.ConfigMap)
-					p.extractConfigMap(yamlFile, configMap)
+					p.handleConfigMap(yamlFile, configMap)
 				} else if gKV.Kind == "Secret" {
 					secret := obj.(*v1.Secret)
 					p.handleSecret(yamlFile, secret)
 				} else {
-					value := reflect.Indirect(reflect.ValueOf(obj))
-					ns := value.FieldByName("Namespace")
-					log.Printf("yamlFile is %s", yamlFile)
-					log.Printf("ns is %+v", ns)
-					if !ns.IsZero() {
-						namespace := reflect.Indirect(ns).String()
-						name := value.FieldByName("Name").String()
-
-						log.Printf("Resetting namespace %s at %s/%s", namespace, gKV.Kind, name)
-						ns.SetString("")
-
-						os.Rename(yamlFile, BackupFile(yamlFile))
-						newFile, err := os.Create(yamlFile)
-						if err != nil {
-							log.Fatal(err)
-						}
-						y := printers.YAMLPrinter{}
-						defer newFile.Close()
-						y.PrintObj(obj, newFile)
-					} else {
-						name := value.FieldByName("Name").String()
-						log.Printf("Found not namespaced resource %s/%s", gKV.Kind, name)
-					}
+					p.resetNamespace(obj, yamlFile)
 				}
 			}
 		}
 	}
 }
 
-func (p *Parametrizer) extractConfigMap(configMapFile string, configMap *v1.ConfigMap) {
-	log.Printf("Extracting ConfigMap %s", configMap.Name)
-	tmpParamsFolder := p.installerConfig.TmpParamsFolderForConfigMap(configMap.Namespace, configMap.Name)
-	RunCommand("oc", "extract", "-f", configMapFile, "--to", tmpParamsFolder)
+func (*Parametrizer) resetNamespace(obj runtime.Object, yamlFile string) {
+	value := reflect.Indirect(reflect.ValueOf(obj))
+	ns := value.FieldByName("Namespace")
+	name := value.FieldByName("Name").String()
+	kind := value.FieldByName("Kind").String()
+	// log.Printf("yamlFile is %s", yamlFile)
+	// log.Printf("ns is %+v", ns)
+	if !ns.IsZero() {
+		namespace := reflect.Indirect(ns).String()
+
+		log.Printf("Resetting namespace %s at %s/%s", namespace, kind, name)
+		ns.SetString("")
+
+		os.Rename(yamlFile, BackupFile(yamlFile))
+		newFile, err := os.Create(yamlFile)
+		if err != nil {
+			log.Fatal(err)
+		}
+		y := printers.YAMLPrinter{}
+		defer newFile.Close()
+		y.PrintObj(obj, newFile)
+	} else {
+		log.Printf("Found not namespaced resource %s/%s", kind, name)
+	}
+}
+
+func (p *Parametrizer) handleConfigMap(configMapFile string, configMap *v1.ConfigMap) {
+	log.Printf("Handling ConfigMap %s", configMap.Name)
+	tmpParamsFolder := p.installerConfig.TmpParamsFolderForNS(configMap.Namespace)
+	// RunCommand("oc", "extract", "-f", configMapFile, "--to", tmpParamsFolder)
 
 	templateFile := filepath.Join(tmpParamsFolder, fmt.Sprintf("%s.env", configMap.Name))
 	os.Create(templateFile)
@@ -113,7 +118,8 @@ func (p *Parametrizer) extractConfigMap(configMapFile string, configMap *v1.Conf
 		AppendToFile(templateFile, fmt.Sprintf("#%s=%s\n", key, config.NoValue))
 	}
 
-	os.Rename(configMapFile, BackupFile(configMapFile))
+	p.resetNamespace(configMap, configMapFile)
+	// os.Rename(configMapFile, BackupFile(configMapFile))
 }
 
 func (p *Parametrizer) handleSecret(secretFile string, secret *v1.Secret) {

@@ -18,24 +18,21 @@ for the given environment
 * The generated installer is agnostic from the original namespaces
 
 ## Feature design
-* Based on a Golang application that runs the Konveyor CLI tools and performs post-execution manipulation
-  * Externalize all the `ConfigMap` to allow the customizations of each single property or just use the 
-  default values
-    * `oc extract` command is used for the purpose
-    * The base `kustomize` configuration re-creates the `ConfigMap`s using files that are extracted from the
-    extracted configurations (1 file per key)
-    * The `kustomize` overlays instead use a merged approach and can override only the needed keys using a properties
-    file `custom.env`
-  * Externalize all the keys in the managed `Secret`s and provide template files to be populated with actual values
-    * The base `kustomize` configuration does not re-create the `Secret`s, so this deployment would actually fail
-    * The `kustomize` overlays instead re-create the `Secret`s from the template files
-    * Errors must be raised while trying to install the default template for the secrets
+* Based on a Golang application that runs the `Konveyor crane` CLI to export and normalize the original configuration
+* Post-execution manipulations are performed
   * Clear the reference to the original namespace
+  * Create a sample `template` for the overlayed configuration where the developer can apply customizations
+    * All the keys in any given `ConfigMap` can be overridden in properties files called `CONFIGMAP_NAME.env`
+      * The skeleton of these files are automatically generated with all the key names commented out 
+    * All the keys in the managed `Secret`s are customizable in the same way
+      * The `template` overlay re-creates the `Secret`s from the template files called `SECRET_NAME.env`
+      * The base `kustomize` configuration does not re-create the `Secret`s, so its deployment would actually fail
+      * Errors must be raised while trying to install the default template for the secrets
 
 **TODO**:
-* Hide the `Secret` values
+* [Handle `Secret` securely ](https://github.com/zvigrinberg/handle-secrets-with-kustomize/blob/main/README.md)
 * Manage mandatory params
-  * Remove from defaults
+  * Remove from copied ConfigMaps
   * Put in custom.env as__DEFAULT__
 * Handle properties that are not managed as ConfigMap/Secret keys
 * Export of cluster-wide resources
@@ -89,14 +86,7 @@ namespaces:
 │                   ├── base
 │                   │   ├── "RESOURCE1.yaml"
 │                   │   ├── "RESOURCE2.yaml"
-│                   │   ├── kustomization.yaml
-│                   │   └── params
-│                   │       ├── "CONFIG_MAP1"
-│                   │       │   ├── "KEY1"
-│                   │       │   └── "KEY2"
-│                   │       └── "CONFIG_MAP2"
-│                   │           ├── "KEY1"
-│                   │           └── "KEY2"
+│                   │   └── kustomization.yaml
 │                   └── template
 │                       ├── kustomization.yaml
 │                       ├── params
@@ -106,12 +96,8 @@ namespaces:
 │                           └── "SECRET1.env"
 ```
 
-The `base` kustomization contains the resources extracted from the source cluster and the parameters needed to rebuild the 
-`ConfigMap`s using the content of the `params` folder:
-```bash
-> cat output/Infinity/installer/kustomize/holdings/base/params/CONFIG_MAP1/KEY1
-VALUE1
-```
+The `base` kustomization contains the resources extracted from the source cluster, stripped of the status information,
+cluster specific settings and namespace configuration.
 
 The `template` overlay is an example of a possible `kustomize` overlay, with skeletons of environment files to override the
 `ConfigMap`s parameters (remove the `#` comment and set the desired value) and all the `Secret` values:
@@ -124,6 +110,18 @@ The `template` overlay is an example of a possible `kustomize` overlay, with ske
 KEY1=__EMPTY
 ```
 
+## Customize and install the template
+Simple procedure that will be automated using the [replica-installer](../replica-installer/README.md) tool.
+
+```bash
+cd output/APPLICATION/installer/kustomize/NAMESPACE
+cp -r template MYCONFIG
+cd MYCONFIG
+# Apply namespaxce update (must be created first)
+kustomize edit set namespace MYNAMESPACE
+# Edit changes to params/*.env and secrets/*env
+kustomize build . | oc apply -f-
+```
 ## Open points
 * Which permissions are needed to export
 * Parametrize overlay names:

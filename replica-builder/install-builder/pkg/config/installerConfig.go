@@ -62,10 +62,6 @@ func (i *InstallerConfig) TmpSecretsFolderForNS(namespace string) string {
 	return i.lookupOrCreateFolder(namespace, SecretsFolder)
 }
 
-func (i *InstallerConfig) TmpParamsFolderForConfigMap(namespace string, configmap string) string {
-	return i.lookupOrCreateFolder(i.TmpParamsFolderForNS(namespace), configmap)
-}
-
 func (i *InstallerConfig) InstallerFolder() string {
 	return i.lookupOrCreateFolder("installer")
 }
