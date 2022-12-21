@@ -18,6 +18,9 @@ func main() {
 	pretty.Printf("Exporting application %# v", appConfig)
 	exporterConfig := config.NewInstallerConfigFromApplicationConfig(appConfig)
 
+	clusterRolesInspector := installer.NewClusterRolesInspector()
+	clusterRolesInspector.LoadClusterRoles()
+
 	exporter := installer.NewExporterFromConfig(appConfig, exporterConfig)
 	exporter.PrepareOutput()
 	exporter.ExportWithCrane()
@@ -25,6 +28,6 @@ func main() {
 	parametrizer := installer.NewParametrizerFromConfig(appConfig, exporterConfig)
 	parametrizer.ExposeParameters()
 
-	installer := installer.NewInstallerFromConfig(appConfig, exporterConfig)
+	installer := installer.NewInstallerFromConfig(appConfig, exporterConfig, clusterRolesInspector)
 	installer.BuildKustomizeInstaller()
 }

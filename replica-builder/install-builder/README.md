@@ -5,8 +5,6 @@ installer for the [replica-installer](../replica-installer/README.md) tool.
 ## Dependencies
 * Use [Konveyor crane](https://konveyor.io/tools/crane/) to export the original configuration and remove cluster specific settings 
 (e.g. IP addresses, status, ...)
-* Use [Konveyor move2kube](https://move2kube.konveyor.io/) to generate the [kustomize](https://kustomize.io/) installer 
-for the given environment 
 
 ## Features
 * The generated installer can replicate the resources of the original namespaces
@@ -16,6 +14,7 @@ for the given environment
     installation time 
   * Original values fom all `Secret`s are hidden and must be overridden at installation time
 * The generated installer is agnostic from the original namespaces
+* The installer also exports cluster-wide resources like the `ClusterRoleBindings` to 
 
 ## Feature design
 * Based on a Golang application that runs the `Konveyor crane` CLI to export and normalize the original configuration
@@ -52,7 +51,7 @@ application:
 
 ## Running the builder
 Prerequisites:
-* `oc`, `crane` and `move2kube` CLI are installed
+* `oc` and `crane` CLI are installed
 * Login `oc` to the source OpenShift cluster
 * `go` at least version 1.19 
 
@@ -114,11 +113,6 @@ kustomize build . | oc apply -f-
 ```
 ## Open points
 * Which permissions are needed to export
-* Parametrize overlay names:
-    * [code](https://github.com/konveyor/move2kube/blob/3d57835d897596bed2bd42d937b6c5f2ac173f73/transformer/kubernetes/parameterizer/parameterizer.go#L57)
-    * [Parameterizing custom fields in Helm Chart, Kustomize, OC Templates](https://move2kube.konveyor.io/tutorials/customizing-the-output/custom-parameterization-of-helm-charts-kustomize-octemplates)
-* `move2kube`: add externalizer script to automate the extraction
-    * What for Helm and OpenShift template?
 * `crane`: Create transformer to automatically remove namespaces
     * [customplugins](https://konveyor.github.io/crane/tools/customplugins/)
 * What if there are Jobs needed to run before installing the app? (e.g., dbinit)
@@ -133,3 +127,5 @@ kustomize build . | oc apply -f-
 * Consider cross-namespace references (e.g. a Service URL like "<svc name>.<ns-name>")
 * Skip `kubernetes.io/service-account-token` Secrets
 * Manage image registries
+* Export required `ClusterRole`s
+* Export required `SecurityContextConstraint`s

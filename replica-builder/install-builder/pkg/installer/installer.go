@@ -3,28 +3,35 @@ package installer
 import (
 	"fmt"
 	"io/fs"
+	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
 	"strings"
 
 	"github.com/RHEcosystemAppEng/SaaSi/replica-builder/install-builder/pkg/config"
+	v1 "k8s.io/api/core/v1"
+	rbacV1 "k8s.io/api/rbac/v1"
+	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/cli-runtime/pkg/printers"
+	"k8s.io/client-go/kubernetes/scheme"
 )
 
 type Installer struct {
-	appConfig       *config.ApplicationConfig
-	installerConfig *config.InstallerConfig
+	appConfig             *config.ApplicationConfig
+	installerConfig       *config.InstallerConfig
+	clusterRolesInspector *ClusterRolesInspector
 }
 
-func NewInstallerFromConfig(appConfig *config.ApplicationConfig, installerConfig *config.InstallerConfig) *Installer {
-	installer := Installer{appConfig: appConfig, installerConfig: installerConfig}
+func NewInstallerFromConfig(appConfig *config.ApplicationConfig, installerConfig *config.InstallerConfig, clusterRolesInspector *ClusterRolesInspector) *Installer {
+	installer := Installer{appConfig: appConfig, installerConfig: installerConfig, clusterRolesInspector: clusterRolesInspector}
 
 	return &installer
 }
 
 func (i *Installer) BuildKustomizeInstaller() {
 	for _, ns := range i.appConfig.Application.Namespaces {
-		log.Printf("Creating installer for NS %s with move2kube", ns.Name)
+		log.Printf("Creating kustomize installer for NS %s", ns.Name)
 
 		outputFolder := i.installerConfig.OutputFolderForNS(ns.Name)
 		kustomizeFolder := i.installerConfig.BaseKustomizeFolderForNS(ns.Name)
@@ -37,6 +44,19 @@ func (i *Installer) BuildKustomizeInstaller() {
 				return e
 			}
 			if !d.IsDir() && filepath.Ext(d.Name()) == ".yaml" {
+				yfile, err := ioutil.ReadFile(path)
+				if err != nil {
+					log.Fatal(err)
+				}
+				decode := scheme.Codecs.UniversalDeserializer().Decode
+				obj, gKV, err := decode(yfile, nil, nil)
+				if err == nil {
+					if gKV.Kind == "ServiceAccount" {
+						serviceAccount := obj.(*v1.ServiceAccount)
+						i.handleServiceAccount(kustomization, ns.Name, serviceAccount)
+					}
+				}
+
 				// log.Printf("Moving %s to %s", d.Name(), kustomizeFolder)
 				os.Rename(path, filepath.Join(kustomizeFolder, d.Name()))
 				AppendToFile(kustomization, fmt.Sprintf("\n  - %s", d.Name()))
@@ -112,5 +132,57 @@ func (i *Installer) createKustomizeTemplate() {
 				log.Fatalf("Cannot create kustomize template: %s", err)
 			}
 		}
+	}
+}
+
+func (i *Installer) handleServiceAccount(kustomization string, namespace string, serviceAccount *v1.ServiceAccount) {
+	log.Printf("Handling ServiceAccount %s", serviceAccount.Name)
+
+	clusterRoleBindings := i.clusterRolesInspector.ClusterRoleBindingsForSA(namespace, serviceAccount.Name)
+
+	for _, clusterRoleBinding := range clusterRoleBindings {
+		// TODO: update CRB name
+		yamlFile := fmt.Sprintf("%s-%s.yaml", "ClusterRoleBinding", clusterRoleBinding.Name)
+		yamlPath := filepath.Join(i.installerConfig.BaseKustomizeFolderForNS(namespace), yamlFile)
+
+		clusterRoleBindingSpec := rbacV1.ClusterRoleBinding{
+			// TODO: These two are not collected by client-go API
+			TypeMeta: metaV1.TypeMeta{
+				APIVersion: "rbac.authorization.k8s.io/v1",
+				Kind:       "ClusterRoleBinding",
+			},
+			ObjectMeta: metaV1.ObjectMeta{
+				Name: clusterRoleBinding.Name,
+			},
+			RoleRef: rbacV1.RoleRef{
+				Kind: clusterRoleBinding.RoleRef.Kind,
+				Name: clusterRoleBinding.RoleRef.Name,
+				// Do not copy the original namespace, will be overriden at install time
+			},
+			// TODO: API Group
+			Subjects: []rbacV1.Subject{},
+		}
+		for _, subject := range clusterRoleBinding.Subjects {
+			clusterRoleBindingSpec.Subjects = append(clusterRoleBindingSpec.Subjects, rbacV1.Subject{
+				Kind:      subject.Kind,
+				Name:      subject.Name,
+				Namespace: subject.Namespace,
+			})
+			// TODO: API Group
+		}
+
+		log.Printf("Creating YAML %s for ClusterRoleBinding %s to assign role %s to ServiceAccount %s", yamlFile,
+			clusterRoleBindingSpec.Name, clusterRoleBindingSpec.RoleRef.Name, serviceAccount.Name)
+		newFile, err := os.Create(yamlPath)
+		if err != nil {
+			log.Fatal(err)
+		}
+		y := printers.YAMLPrinter{}
+		defer newFile.Close()
+		if err = y.PrintObj(&clusterRoleBindingSpec, newFile); err != nil {
+			log.Fatal(err)
+		}
+
+		AppendToFile(kustomization, fmt.Sprintf("\n  - %s", yamlFile))
 	}
 }
