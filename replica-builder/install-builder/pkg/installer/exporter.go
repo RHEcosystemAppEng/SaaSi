@@ -85,6 +85,7 @@ func doExport(namespace string, exportFolder string) {
 	exportNamespace.Value.Set(namespace)
 	exportDir := exportCmd.Flags().Lookup("export-dir")
 	exportDir.Value.Set(exportFolder)
+	exportCmd.SetArgs([]string{})
 
 	_, err := exportCmd.ExecuteC()
 	if err != nil {
@@ -99,6 +100,7 @@ func doTransform(exportFolder string, transformFolder string) {
 	exportDir.Value.Set(exportFolder)
 	transformDir := transformCmd.Flags().Lookup("transform-dir")
 	transformDir.Value.Set(transformFolder)
+	transformCmd.SetArgs([]string{})
 
 	_, err := transformCmd.ExecuteC()
 	if err != nil {
@@ -115,6 +117,7 @@ func doApply(exportFolder string, transformFolder string, outputFolder string) {
 	transformDir.Value.Set(transformFolder)
 	outputDir := applyCmd.Flags().Lookup("output-dir")
 	outputDir.Value.Set(outputFolder)
+	applyCmd.SetArgs([]string{})
 
 	_, err := applyCmd.ExecuteC()
 	if err != nil {
