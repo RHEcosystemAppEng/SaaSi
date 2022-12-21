@@ -3,6 +3,7 @@ module github.com/RHEcosystemAppEng/SaaSi/replica-builder/install-builder
 go 1.19
 
 require (
+	github.com/konveyor/crane v0.0.5
 	github.com/kr/pretty v0.3.0
 	github.com/openshift/api v0.0.0-20221209105451-d85cfcef97b7
 	github.com/openshift/client-go v0.0.0-20221213131518-7aec8d54188a
@@ -45,7 +46,6 @@ require (
 	github.com/inconshreveable/mousetrap v1.0.1 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
-	github.com/konveyor/crane v0.0.5 // indirect
 	github.com/konveyor/crane-lib v0.0.8 // indirect
 	github.com/kr/text v0.2.0 // indirect
 	github.com/liggitt/tabwriter v0.0.0-20181228230101-89fcab3d43de // indirect
