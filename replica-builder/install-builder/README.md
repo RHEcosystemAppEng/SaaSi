@@ -111,21 +111,6 @@ kustomize edit set namespace MYNAMESPACE
 # Edit changes to params/*.env and secrets/*env
 kustomize build . | oc apply -f-
 ```
-## Open points
-* Which permissions are needed to export
-* `crane`: Create transformer to automatically remove namespaces
-    * [customplugins](https://konveyor.github.io/crane/tools/customplugins/)
-* What if there are Jobs needed to run before installing the app? (e.g., dbinit)
-* Convert/adapt cluster versions (e.g. adapt to different K8s API versions)
 
-**TODOs**:
-* [Handle `Secret` securely ](https://github.com/zvigrinberg/handle-secrets-with-kustomize/blob/main/README.md)
-* Handle properties that are not managed as ConfigMap/Secret keys
-* Export of cluster-wide resources
-* Filter out automatically created resources (e.g., some RoleBindings)
-* Management of OpenShift resources (e.g. Route)
-* Consider cross-namespace references (e.g. a Service URL like "<svc name>.<ns-name>")
-* Skip `kubernetes.io/service-account-token` Secrets
-* Manage image registries
-* Export required `ClusterRole`s
-* Export required `SecurityContextConstraint`s
+## Issues
+GitHub [install-builder issues](https://github.com/RHEcosystemAppEng/SaaSi/issues?q=is%3Aopen+is%3Aissue+label%3Ainstall-builder)
