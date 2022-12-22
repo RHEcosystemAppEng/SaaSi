@@ -3,7 +3,6 @@ package installer
 import (
 	"log"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 
@@ -20,24 +19,9 @@ type Exporter struct {
 }
 
 func NewExporterFromConfig(appConfig *config.ApplicationConfig, installerConfig *config.InstallerConfig) *Exporter {
-	validateRequirements()
 	exporter := Exporter{appConfig: appConfig, installerConfig: installerConfig}
 
 	return &exporter
-}
-
-func validateRequirements() {
-
-	_, err := exec.LookPath("oc")
-	if err != nil {
-		log.Fatal("oc command not found")
-	}
-
-	_, err = exec.LookPath("kustomize")
-	if err != nil {
-		log.Fatal("kustomize command not found")
-	}
-	log.Printf("Requirements validated")
 }
 
 func (e *Exporter) PrepareOutput() {
