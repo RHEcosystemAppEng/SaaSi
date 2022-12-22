@@ -63,8 +63,6 @@ func (i *Installer) BuildKustomizeInstaller() {
 			}
 			return nil
 		})
-		// RunCommand("move2kube", "plan", "--source", outputFolder, "--name", ns.Name)
-		// RunCommand("move2kube", "transform", "--qa-skip", "true", "--output", i.installerConfig.InstallerFolder())
 	}
 
 	i.createKustomizeTemplate()

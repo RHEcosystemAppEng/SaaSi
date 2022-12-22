@@ -3,21 +3,21 @@ A Golang CLI tool to extract configurations from a live OpenShit/Kubernetes envi
 installer for the [replica-installer](../replica-installer/README.md) tool.
 
 ## Dependencies
-* Use [Konveyor crane](https://konveyor.io/tools/crane/) to export the original configuration and remove cluster specific settings 
+* [Konveyor Crane](https://konveyor.io/tools/crane/) [Golang](https://go.dev/) packages to export the original configuration and remove cluster specific settings 
 (e.g. IP addresses, status, ...)
 
 ## Features
 * The generated installer can replicate the resources of the original namespaces
 * The generated installer allows to override all the application parameters defined in the `ConfigMap` and `Secrets` (encrypted)
-  * Original values fom all `ConfigMap`s are used as defaults but can be overridden individually
-    * We can identify mandatory properties whose values will not be copied to be reused but has to be overridden at 
+  * Original values from all `ConfigMap`s are used as defaults but can be overridden individually
+    * Mandatory properties will be identified and their values will not be copied to be reused but will have to be overridden at 
     installation time 
-  * Original values fom all `Secret`s are hidden and must be overridden at installation time
+  * Original values from all `Secret`s are hidden and must be overridden at installation time
 * The generated installer is agnostic from the original namespaces
 * The installer also exports cluster-wide resources like the `ClusterRoleBindings` to 
 
 ## Feature design
-* Based on a Golang application that runs the `Konveyor crane` CLI to export and normalize the original configuration
+* Apply [Golang](https://go.dev/) packages imported from the `Crane` migration tool (under the `Konveyor` community) to export and normalize the original configuration
 * Post-execution manipulations are performed
   * Clear the reference to the original namespace
   * Create a sample `template` for the overlayed configuration where the developer can apply customizations
@@ -50,10 +50,11 @@ application:
 ```
 
 ## Running the builder
+
 Prerequisites:
-* `oc` and `crane` CLI are installed
-* Login `oc` to the source OpenShift cluster
-* `go` at least version 1.19 
+* Install `oc` CLI tool
+* Install `go` CLI tool (at least version 1.19)
+* `oc` login to the source OpenShift cluster
 
 Run this command to create the installer from the given configuration `myapp.yaml`:
 ```bash

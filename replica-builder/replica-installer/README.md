@@ -54,9 +54,9 @@ application:
 
 ## Running the installer
 Prerequisites:
-* `oc`, `kustomize` CLI are installed
-* Login `oc` to the target OpenShift cluster
-* `go` at least version 1.19
+* Install `oc` and `kustomize` CLI tools
+* Install `go` CLI tool (at least version 1.19)
+* `oc` login to the source OpenShift cluster
 
 Run this command to install the package extracted in `./installer/MYAPP` from the given configuration `myapp.yaml`:
 ```bash

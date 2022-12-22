@@ -3,10 +3,14 @@ package installer
 import (
 	"log"
 	"os"
-	"os/exec"
 	"path/filepath"
+	"strings"
 
 	"github.com/RHEcosystemAppEng/SaaSi/replica-builder/install-builder/pkg/config"
+	"github.com/konveyor/crane/cmd/apply"
+	"github.com/konveyor/crane/cmd/export"
+	"github.com/konveyor/crane/cmd/transform"
+	"k8s.io/cli-runtime/pkg/genericclioptions"
 )
 
 type Exporter struct {
@@ -15,33 +19,9 @@ type Exporter struct {
 }
 
 func NewExporterFromConfig(appConfig *config.ApplicationConfig, installerConfig *config.InstallerConfig) *Exporter {
-	validateRequirements()
 	exporter := Exporter{appConfig: appConfig, installerConfig: installerConfig}
 
 	return &exporter
-}
-
-func validateRequirements() {
-	_, err := exec.LookPath("crane")
-	if err != nil {
-		log.Fatal("crane command not found")
-	}
-
-	// _, err = exec.LookPath("move2kube")
-	// if err != nil {
-	// 	log.Fatal("move2kube command not found")
-	// }
-
-	_, err = exec.LookPath("oc")
-	if err != nil {
-		log.Fatal("oc command not found")
-	}
-
-	_, err = exec.LookPath("kustomize")
-	if err != nil {
-		log.Fatal("kustomize command not found")
-	}
-	log.Printf("Requirements validated")
 }
 
 func (e *Exporter) PrepareOutput() {
@@ -72,11 +52,60 @@ func (e *Exporter) ExportWithCrane() {
 		transformFolder := e.installerConfig.TransformFolderForNS(ns.Name)
 		outputFolder := e.installerConfig.OutputFolderForNS(ns.Name)
 
-		RunCommand("crane", "export", "--namespace", ns.Name, "--export-dir", exportFolder)
-		RunCommand("crane", "transform", "--export-dir", exportFolder,
-			"--transform-dir", transformFolder)
-		RunCommand("crane", "apply", "--export-dir", exportFolder,
-			"--transform-dir", transformFolder,
-			"--output-dir", outputFolder)
+		doExport(ns.Name, exportFolder)
+		doTransform(exportFolder, transformFolder)
+		doApply(exportFolder, transformFolder, outputFolder)
 	}
+}
+
+func doExport(namespace string, exportFolder string) {
+	exportCmd := export.NewExportCommand(genericclioptions.IOStreams{
+		In:     strings.NewReader(""),
+		Out:    os.Stdout,
+		ErrOut: os.Stderr,
+	}, nil)
+
+	exportNamespace := exportCmd.Flags().Lookup("namespace")
+	exportNamespace.Value.Set(namespace)
+	exportDir := exportCmd.Flags().Lookup("export-dir")
+	exportDir.Value.Set(exportFolder)
+	exportCmd.SetArgs([]string{})
+
+	_, err := exportCmd.ExecuteC()
+	if err != nil {
+		log.Fatalf(err.Error())
+	}
+}
+
+func doTransform(exportFolder string, transformFolder string) {
+	transformCmd := transform.NewTransformCommand(nil)
+
+	exportDir := transformCmd.Flags().Lookup("export-dir")
+	exportDir.Value.Set(exportFolder)
+	transformDir := transformCmd.Flags().Lookup("transform-dir")
+	transformDir.Value.Set(transformFolder)
+	transformCmd.SetArgs([]string{})
+
+	_, err := transformCmd.ExecuteC()
+	if err != nil {
+		log.Fatalf(err.Error())
+	}
+}
+
+func doApply(exportFolder string, transformFolder string, outputFolder string) {
+	applyCmd := apply.NewApplyCommand(nil)
+
+	exportDir := applyCmd.Flags().Lookup("export-dir")
+	exportDir.Value.Set(exportFolder)
+	transformDir := applyCmd.Flags().Lookup("transform-dir")
+	transformDir.Value.Set(transformFolder)
+	outputDir := applyCmd.Flags().Lookup("output-dir")
+	outputDir.Value.Set(outputFolder)
+	applyCmd.SetArgs([]string{})
+
+	_, err := applyCmd.ExecuteC()
+	if err != nil {
+		log.Fatalf(err.Error())
+	}
+
 }
