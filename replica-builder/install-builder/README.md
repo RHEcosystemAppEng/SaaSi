@@ -52,14 +52,9 @@ application:
 ## Running the builder
 
 Prerequisites:
-<<<<<<< HEAD
-* `oc` and `crane` CLI are installed
-* Login `oc` to the source OpenShift cluster
-* `go` at least version 1.19 
-=======
-* `go` CLI tool (at least version 1.19) needs to be installed
-* login to the source OpenShift cluster
->>>>>>> e9b2dd5 (chore: update README)
+* Install `oc` CLI tool
+* Install `go` CLI tool (at least version 1.19)
+* `oc` login to the source OpenShift cluster
 
 Run this command to create the installer from the given configuration `myapp.yaml`:
 ```bash
