@@ -21,3 +21,6 @@ multiple clusters and namespaces. Consists of two components:
   - future goal is to convert it to full Golang app
 - extraction of ConfigMap keys
   - how they simplify the customization of selected properties 
+- all SaasI components should expose API
+  - during the first phases some SaasI components might be triggerd from CLI however the CLI will call an API exposed by the SaaSi components  
+  - future goal is to turn SaaSi components to services 
