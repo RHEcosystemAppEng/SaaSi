@@ -1,5 +1,5 @@
 # SaaSi
-One Stop shop for hybrid cloud native application packing and deployment tools
+One Stop shop for hybrid cloud native application packaging and deployment tools
 
 ## Software architecture
 Composed by two components:
