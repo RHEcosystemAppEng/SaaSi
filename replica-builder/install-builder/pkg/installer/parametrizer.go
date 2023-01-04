@@ -9,13 +9,14 @@ import (
 	"path/filepath"
 	"reflect"
 
+	api "github.com/openshift/api"
+
+	"github.com/RHEcosystemAppEng/SaaSi/replica-builder/install-builder/pkg/config"
 	"golang.org/x/exp/slices"
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/cli-runtime/pkg/printers"
 	"k8s.io/client-go/kubernetes/scheme"
-
-	"github.com/RHEcosystemAppEng/SaaSi/replica-builder/install-builder/pkg/config"
-	v1 "k8s.io/api/core/v1"
 )
 
 type Parametrizer struct {
@@ -43,30 +44,20 @@ func (p *Parametrizer) ExposeParameters() {
 			return nil
 		})
 
+		// Install openshift schemes
+		api.InstallKube(scheme.Scheme)
+		api.Install(scheme.Scheme)
+		decode := scheme.Codecs.UniversalDeserializer().Decode
+
 		for _, yamlFile := range yamlFiles {
 			yfile, err := ioutil.ReadFile(yamlFile)
 			if err != nil {
 				log.Fatal(err)
 			}
 
-			decode := scheme.Codecs.UniversalDeserializer().Decode
 			obj, gKV, err := decode(yfile, nil, nil)
 			if err != nil {
-				workaround := false
-				for _, k := range []string{"RoleBinding", "Route"} {
-					if FileContains(yamlFile, fmt.Sprintf("kind: %s", k)) {
-						// TODO
-						// 1- Skip RoleBindings that are managed by controllers
-						// 2- Manage OpenShift resources like Route
-						log.Printf("Skipping %s resource %s", k, yamlFile)
-						ReplaceInFile(yamlFile, fmt.Sprintf("namespace: %s", ns.Name), "# Removed NS setting")
-						workaround = true
-						break
-					}
-				}
-				if !workaround {
-					log.Fatal(err)
-				}
+				log.Fatal(err)
 			} else {
 				if gKV.Kind == "ConfigMap" {
 					configMap := obj.(*v1.ConfigMap)
