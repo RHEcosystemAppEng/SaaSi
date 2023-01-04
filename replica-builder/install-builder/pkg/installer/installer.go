@@ -21,11 +21,19 @@ type Installer struct {
 	appConfig             *config.ApplicationConfig
 	installerConfig       *config.InstallerConfig
 	clusterRolesInspector *ClusterRolesInspector
+
+	sccToBeReplacedByNS map[string][]SccForSA
+}
+
+type SccForSA struct {
+	serviceAccountName string
+	sccName            string
 }
 
 func NewInstallerFromConfig(appConfig *config.ApplicationConfig, installerConfig *config.InstallerConfig, clusterRolesInspector *ClusterRolesInspector) *Installer {
 	installer := Installer{appConfig: appConfig, installerConfig: installerConfig, clusterRolesInspector: clusterRolesInspector}
 
+	installer.sccToBeReplacedByNS = make(map[string][]SccForSA)
 	return &installer
 }
 
@@ -130,7 +138,31 @@ func (i *Installer) createKustomizeTemplate() {
 				log.Fatalf("Cannot create kustomize template: %s", err)
 			}
 		}
+
+		if len(i.sccToBeReplacedByNS[ns.Name]) > 0 {
+			text := "\nreplacements:"
+			AppendToFile(templateKustomization, text)
+
+			for _, sccForSA := range i.sccToBeReplacedByNS[ns.Name] {
+				text = "\n" +
+					"- source:\n" +
+					"    kind: ServiceAccount\n" +
+					"    name: %s\n" +
+					"    fieldPath: metadata.namespace\n" +
+					"  targets:\n" +
+					"  - select:\n" +
+					"      kind: SecurityContextConstraints\n" +
+					"      name: %s\n" +
+					"    fieldPaths:\n" +
+					"    - users.*\n" +
+					"    options:\n" +
+					"      delimiter: \":\"\n" +
+					"      index: 2\n"
+				AppendToFile(templateKustomization, text, sccForSA.serviceAccountName, sccForSA.sccName)
+			}
+		}
 	}
+
 }
 
 func (i *Installer) handleServiceAccount(kustomization string, namespace string, serviceAccount *v1.ServiceAccount) {
@@ -182,5 +214,42 @@ func (i *Installer) handleServiceAccount(kustomization string, namespace string,
 		}
 
 		AppendToFile(kustomization, fmt.Sprintf("\n  - %s", yamlFile))
+	}
+
+	sccs := i.clusterRolesInspector.SecurityContextConstraintsForSA(namespace, serviceAccount.Name)
+	systemName := SystemNameForSA(namespace, serviceAccount.Name)
+	for _, scc := range sccs {
+		// Temporary solution
+		// Create a copy of the original SCC, rename it top match the SA and connect to this SA only
+		// Final solution is:
+		// 1- to avoid such cases and use CRB and SCC instead
+		// 2- to avoid such cases and use CRB and CR instead
+		sccCopy := scc.DeepCopy()
+		sccCopy.Name = fmt.Sprintf("%s-%s", scc.Name, serviceAccount.Name)
+		sccCopy.Users = []string{systemName}
+
+		yamlFile := fmt.Sprintf("%s-%s.yaml", "SecurityContextConstraints", sccCopy.Name)
+		yamlPath := filepath.Join(i.installerConfig.BaseKustomizeFolderForNS(namespace), yamlFile)
+
+		log.Printf("Creating YAML %s for SecurityContextConstraints %s to assign to ServiceAccount %s", yamlFile,
+			sccCopy.Name, serviceAccount.Name)
+		newFile, err := os.Create(yamlPath)
+		if err != nil {
+			log.Fatal(err)
+		}
+		y := printers.YAMLPrinter{}
+		defer newFile.Close()
+		if err = y.PrintObj(sccCopy, newFile); err != nil {
+			log.Fatal(err)
+		}
+
+		AppendToFile(kustomization, fmt.Sprintf("\n  - %s", yamlFile))
+
+		sccForSA := SccForSA{serviceAccountName: serviceAccount.Name, sccName: sccCopy.Name}
+		if sccsForSA, ok := i.sccToBeReplacedByNS[namespace]; ok {
+			sccsForSA = append(sccsForSA, sccForSA)
+		} else {
+			i.sccToBeReplacedByNS[namespace] = []SccForSA{sccForSA}
+		}
 	}
 }
