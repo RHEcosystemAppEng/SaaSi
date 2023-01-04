@@ -75,3 +75,7 @@ func AppendToFile(file string, text string, args ...any) {
 		fmt.Fprint(f, text)
 	}
 }
+
+func SystemNameForSA(namespace string, serviceAccount string) string {
+	return fmt.Sprintf("system:serviceaccount:%s:%s", namespace, serviceAccount)
+}
