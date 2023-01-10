@@ -17,13 +17,19 @@ func main() {
 	pkgNs := "holdings"
 	kustomizePath := "../install-builder/output/Infinity/installer/kustomize"
 
-	pkg, err := packager.NewPkg(pkgNs, kustomizePath)
+	pkg, err := packager.NewPkg(pkgNs)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
 
-	err = pkg.ConfigurePkgKustomize()
+	err = pkg.GeneratePkgTemplate(kustomizePath)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	err = pkg.InvokePkgCustomizations()
 	if err != nil {
 		fmt.Println(err)
 		return

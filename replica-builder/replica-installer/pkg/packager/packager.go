@@ -21,95 +21,77 @@ var (
 
 type Package struct {
 	Uuid uuid.UUID
-	TemplatePath string
 	Namespace string
+	TemplateDirpath string
+	DeploymentFilepath string
 }
 
-func NewPkg(pkgNs string, kustomizePath string) (*Package, error) {
-
-	// generate pkg uuid
-	pkgUuid := uuid.New()
-	
-	// init pkg template
-	pkgTmplPath, err := generatePkgTemplate(pkgUuid, pkgNs, kustomizePath)
-	if err != nil {
-		return nil, err
-	}
+func NewPkg(pkgNs string) (*Package, error) {
 
 	// struct new pkg
 	Package := Package{
-		Uuid: pkgUuid,
-		TemplatePath: pkgTmplPath,
+		Uuid: uuid.New(),
 		Namespace: pkgNs,
+		TemplateDirpath: "",
+		DeploymentFilepath: "",
 	}
 
 	return &Package, nil
 }
 
-func generatePkgTemplate(pkgUuid uuid.UUID, pkgNs string, kustomizePath string) (string, error) {
+func (p *Package) GeneratePkgTemplate(kustomizePath string) error {
 
-	// init path to pkg
-	pkgTmplPath := filepath.Join(kustomizePath, pkgNs, pkgUuid.String())
+	// init path to pkg template
+	pkgTmplPath := filepath.Join(kustomizePath, p.Namespace, p.Uuid.String())
 
-	// init path to general template
-	baseTmplPath := filepath.Join(kustomizePath, pkgNs, TEMPLATE_DIR)
+	// init path to base template
+	baseTmplPath := filepath.Join(kustomizePath, p.Namespace, TEMPLATE_DIR)
 
-	// init pkg template at pkg path
+	// create pkg template at pkg template path
 	cmd := exec.Command("cp", "-r", baseTmplPath, pkgTmplPath)
-	err = cmd.Run()
-	if err != nil {
-		return "", err
+	if err = cmd.Run(); err != nil {
+		return errors.New("Failed to create pkg template")
 	}
 
-	return pkgTmplPath, nil
+	// update pkg struct
+	p.TemplateDirpath = pkgTmplPath
+
+	return nil
 }
 
-func (p *Package) ConfigurePkgKustomize() error {
+func (p *Package) InvokePkgCustomizations() error {
 
 	// validate kustomize cli
-	err = validateRequirements()
-	if err != nil {
+	if err = validateRequirements(); err != nil {
 		return errors.New("kustomize command not found")
 	}
 
 	// set namespace resource in pkg kustomize template
 	cmd := exec.Command("kustomize", "edit", "set", "namespace", p.Namespace)
-	cmd.Dir = p.TemplatePath
-	err = cmd.Run()
-	if err != nil {
+	cmd.Dir = p.TemplateDirpath
+	if err = cmd.Run(); err != nil {
 		return errors.New("Failed to set namesapce by kustomize command")
 	}
 
 	// set common annotation resource in pkg kustomize template
 	cmd = exec.Command("kustomize", "edit", "set", "annotation", COMMON_ANNOTATION_KEY + p.Uuid.String())
-	cmd.Dir = p.TemplatePath
-	err = cmd.Run()
-	if err != nil {
+	cmd.Dir = p.TemplateDirpath
+	if err = cmd.Run(); err != nil {
 		return errors.New("Failed to set common annotations by kustomize command")
 	}
 
 	return nil
 }
 
-func validateRequirements() error {
-
-	// validate kustomize CLI
-	_, err := exec.LookPath("kustomize")
-	if err != nil {
-		return errors.New("kustomize command not found")
-	}
-	return nil
-}
-
 func (p *Package) BuildPkg() error {
 
 	// build pkg with kustomize configuration
-	cmd := exec.Command("kustomize", "build", p.TemplatePath)
+	cmd := exec.Command("kustomize", "build", p.TemplateDirpath)
 
-	// init path to deployment pkg
-	pkgDeploymentPath := filepath.Join(p.TemplatePath, DEPLOYMENT_FILE_NAME)
+	// init path to pkg deployment file
+	pkgDeploymentPath := filepath.Join(p.TemplateDirpath, DEPLOYMENT_FILE_NAME)
 	
-	// create deployment file
+	// create pkg deployment file
 	pkgDeploymentFile, err := os.Create(pkgDeploymentPath)
 	if err != nil {
 		return errors.New("Failed to create file for deployment file")
@@ -119,13 +101,31 @@ func (p *Package) BuildPkg() error {
 	// write cmd output to deployment file
 	cmd.Stdout = pkgDeploymentFile
 
-	if err := cmd.Run(); err != nil {
+	if err = cmd.Run(); err != nil {
 		return errors.New("Failed to run kustomize CLI command")
 	}
+
+	// update pkg struct
+	p.DeploymentFilepath = pkgDeploymentPath
 
 	return nil
 }
 
 // func (p *Package) DeployPkg() {
 
+
 // }
+
+// -----------------------
+// --- Private Methods ---
+// -----------------------
+
+func validateRequirements() error {
+
+	// validate kustomize CLI
+	
+	if _, err = exec.LookPath("kustomize"); err != nil {
+		return errors.New("kustomize command not found")
+	}
+	return nil
+}
