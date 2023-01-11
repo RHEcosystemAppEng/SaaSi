@@ -77,7 +77,6 @@ echo "Getting Cloud/Bare-Metal Provider Info..."
 export PROV_CLOUD_PROVIDER=$(oc get Infrastructure cluster -o go-template='{{.status.platform}}')
 export PROV_CLOUD_REGION=$(oc get Infrastructure cluster -o go-template="{{.status.platformStatus.$(echo $PROV_CLOUD_PROVIDER | tr '[:upper:]' '[:lower:]').region}}")
 
-echo "----$PROV_CLOUD_PROVIDER ; $PROV_CLOUD_REGION"
 
 ## Reading User defined Vars
 ################################################################################
