@@ -24,5 +24,17 @@ oc cluster-info
 ls ./results
 ```
 
+### Customization
+If any configuration overwrite is needed to update the parameters of the result
+YAML file, an extra configuration file is available.
+```
+./cluster_exporter.sh -c custom_vars.env
+```
+
+The available vars are defined in an example file located at:
+`./exporter/customize.env`. If not specified, no configuration change will be
+made.
+
+
 **Note**: Each exported manifests could be found under `results` folder named
 as: `cluster_manifest_cloned-<{TARGET_CLUSTER_DOMAIN>.yaml

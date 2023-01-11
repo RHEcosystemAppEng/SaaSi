@@ -24,7 +24,7 @@ function print_usage() {
   echo "
   $0
     -c: Specifies the file with the customization env vars.
-        (Default value: ./customize.env)
+        (Example values in: ./exporter/customize.env)
     -h: Prints script's usage
   "
 }
@@ -41,9 +41,8 @@ done
 
 
 ## Init
-echo "Initializating..."
+echo "Initializing..."
 [[ ! -d $RESULTS_DIR ]] && { mkdir -p $RESULTS_DIR; }
-USER_DEF_VARS_FILE="${USER_DEF_VARS_FILE:-./customize.env}"
 
 
 ## Main
@@ -82,7 +81,9 @@ echo "----$PROV_CLOUD_PROVIDER ; $PROV_CLOUD_REGION"
 
 ## Reading User defined Vars
 ################################################################################
-source $USER_DEF_VARS_FILE
+if [ ! -z $USER_DEF_VARS_FILE ]; then
+  source $USER_DEF_VARS_FILE
+fi
 
 ## Generating Template
 ################################################################################
