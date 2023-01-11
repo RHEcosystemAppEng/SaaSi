@@ -19,20 +19,42 @@ ORI_CLUSTER_API=$(kubectl cluster-info | \
 )
 ORI_CLUSTER_ID="$(oc get clusterversion -o jsonpath='{.items[].spec.clusterID}{"\n"}')"
 
+# Print script usage flags
+function print_usage() {
+  echo "
+  $0
+    -c: Specifies the file with the customization env vars.
+        (Default value: ./customize.env)
+    -h: Prints script's usage
+  "
+}
+
+
+while getopts 'ch' flag; do
+  case "${flag}" in
+    c) USER_DEF_VARS_FILE="$OPTARG" ;;
+    h) print_usage; exit 0 ;;
+    *) print_usage; exit 1 ;;
+  esac
+done
+
+
 
 ## Init
 echo "Initializating..."
-[[ -d $RESULTS_DIR ]] || { mkdir -p $RESULTS_DIR; }
+[[ ! -d $RESULTS_DIR ]] && { mkdir -p $RESULTS_DIR; }
+USER_DEF_VARS_FILE="${USER_DEF_VARS_FILE:-./customize.env}"
 
 
 ## Main
 ################################################################################
 echo "Copying cluster with ID: $ORI_CLUSTER_ID at $ORI_CLUSTER_API"
+echo "Using $USER_DEF_VARS_FILE file to apply customizations"
 
 echo "Getting Cluster Info..."
 export CLUSTER_NAME=$(echo "$PREFIX$ORI_CLUSTER_API" | sed -r 's/https:\/\/api.([0-9a-zA-Z\-]*)\.(.*):6443/\1/')
 export CLUSTER_BASE_DOMAIN=$(echo "$ORI_CLUSTER_API" | sed -r 's/https:\/\/api.([0-9a-zA-Z\-]*)\.(.*):6443/\2/')
-export CLUSTER_VERSION=$(oc get clusterversion -o go-template='{{range .items}}{{.spec.desiredUpdate.version}}{{"\n"}}{{end}}')
+export CLUSTER_VERSION=$(oc get clusterversion -o go-template='{{range .items}}{{.status.desired.version}}{{"\n"}}{{end}}')
 
 
 echo "Getting Infrastructure Info..."
@@ -56,11 +78,17 @@ echo "Getting Cloud/Bare-Metal Provider Info..."
 export PROV_CLOUD_PROVIDER=$(oc get Infrastructure cluster -o go-template='{{.status.platform}}')
 export PROV_CLOUD_REGION=$(oc get Infrastructure cluster -o go-template="{{.status.platformStatus.$(echo $PROV_CLOUD_PROVIDER | tr '[:upper:]' '[:lower:]').region}}")
 
+echo "----$PROV_CLOUD_PROVIDER ; $PROV_CLOUD_REGION"
+
+## Reading User defined Vars
+################################################################################
+source $USER_DEF_VARS_FILE
 
 ## Generating Template
 ################################################################################
 echo "Generating Manifest..."
 j2 templates/manifest.j2 > $RESULTS_DIR/cluster_manifest_${CLUSTER_NAME}_${CLUSTER_BASE_DOMAIN}.yaml
+
 
 
 echo "Done"

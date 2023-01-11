@@ -7,7 +7,9 @@ cluster:
   name: "{{ CLUSTER_NAME }}"        # DNS compatible
   version: "{{ CLUSTER_VERSION }}"  # X.Y.Z
 
-  {%- if PROV_CLOUD_PROVIDER | length > 1 %}
+
+  {%- if PROV_CLOUD_PROVIDER != 'None' %}
+  # Cloud Config
   cloud:
     {{ PROV_CLOUD_PROVIDER | lower }}:
       profile: # Values defined in ansible vault secret (MANDATORY)
@@ -21,6 +23,7 @@ cluster:
   {%- endif %}
 
 
+  # Day-2 operations config
   config:
     name: "{{ CLUSTER_NAME }}"
     registry:
@@ -72,7 +75,7 @@ cluster:
       serviceNetwork:
       - "{{ SERVICE_NETWORK }}"
 
-    {%- if PROV_CLOUD_PROVIDER | length > 1 %}
+    {%- if PROV_CLOUD_PROVIDER != 'None' %}
     platform:
       {{ PROV_CLOUD_PROVIDER | lower }}:
         region: "{{ PROV_CLOUD_REGION }}"
