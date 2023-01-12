@@ -44,7 +44,7 @@ application:
             value: VALUE-1
           - name: "..."
             value: "..."
-      - configMap: SECRET-2
+      - secret: SECRET-2
           params:
           - name: PARAM-1
             value: VALUE-1

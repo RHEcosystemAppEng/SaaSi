@@ -11,6 +11,13 @@
             "mode": "auto",
             "program": "replica-builder/install-builder/main.go",
             "args": ["infinity.yaml"]
+        },
+        {
+            "name": "deployer",
+            "type": "go",
+            "request": "launch",
+            "mode": "auto",
+            "program": "replica-builder/replica-installer/main.go",
         }
     ]
 }
