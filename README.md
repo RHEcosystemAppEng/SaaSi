@@ -18,7 +18,7 @@ cd exporter
 oc cluster-info
 
 # Run the exporter
-./cluster_exporter.sh
+./exporter.sh
 
 # Check results
 ls ./results
