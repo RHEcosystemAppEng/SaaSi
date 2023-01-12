@@ -9,13 +9,13 @@ import (
 	"github.com/RHEcosystemAppEng/SaaSi/replica-builder/replica-installer/pkg/utils"
 )
 
-func (pkg *DeploymentPkg)invokePkgCustomizations(ns config.SourceNamespace) { 
+func (pkg *ApplicationPkg)invokeNsCustomizations(ns config.SourceNamespace) { 
 
 	// validate kustomize cli
 	utils.ValidateRequirements()
 	
 	// define path to namespace template directory
-	nsTmplDir := filepath.Join(pkg.KustomizeFolder, ns.Name, TEMPLATE_DIR)
+	nsTmplDir := filepath.Join(pkg.KustomizeDir, ns.Name, TEMPLATE_DIR)
 
 	// set the namespace resource to target namespace
 	cmd := exec.Command("kustomize", "edit", "set", "namespace", ns.Target)

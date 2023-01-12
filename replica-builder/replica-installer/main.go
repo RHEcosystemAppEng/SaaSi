@@ -26,6 +26,6 @@ func main() {
 	pretty.Printf("Exporting application %# v", applicationConfig)
 
 	// create deployment package
-	_ = packager.NewDeploymentPkg(applicationConfig)
+	_ = packager.NewApplicationPkg(applicationConfig)
 
 }

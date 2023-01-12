@@ -26,88 +26,87 @@ var (
 	err error
 )
 
-type DeploymentPkg struct {
-	Uuid uuid.UUID
-	AppFolder    string
-	KustomizeFolder string
-	DeloymentFolder string
+type ApplicationPkg struct {
+	Uuid 			uuid.UUID
+	AppConfig 		*config.ApplicationConfig
+	AppDir    		string
+	KustomizeDir 	string
+	DeloymentDir 	string
 }
 
-func NewDeploymentPkg(appConfig *config.ApplicationConfig) *DeploymentPkg {
+func NewApplicationPkg(appConfig *config.ApplicationConfig) *ApplicationPkg {
 	
-	// init DeploymentPkg
-	pkg := DeploymentPkg{}
+	// init ApplicationPkg
+	pkg := ApplicationPkg{}
 
 	// generate uuid
 	pkg.Uuid = uuid.New()
+
+	// assign configuration
+	pkg.AppConfig = appConfig
 
 	// create application directories
 	// application directory
 	pwd, _ := os.Getwd()
 	log.Printf("Running from %v", pwd)
-	pkg.AppFolder = filepath.Join(pwd, OUTPUT_DIR, appConfig.Application.Name)
-	utils.CreateDir(pkg.AppFolder)
+	pkg.AppDir = filepath.Join(pwd, OUTPUT_DIR, appConfig.Application.Name)
+	utils.CreateDir(pkg.AppDir)
 	// kustomize directory for namesapce artifacts
-	pkg.KustomizeFolder = filepath.Join(pkg.AppFolder, KUSTOMIZE_DIR)
-	utils.CreateDir(pkg.KustomizeFolder)
+	pkg.KustomizeDir = filepath.Join(pkg.AppDir, KUSTOMIZE_DIR)
+	utils.CreateDir(pkg.KustomizeDir)
 	// deployment directory for deployment packages
-	pkg.DeloymentFolder = filepath.Join(pkg.AppFolder, DEPLOYMENT_DIR)
-	utils.CreateDir(pkg.DeloymentFolder)
+	pkg.DeloymentDir = filepath.Join(pkg.AppDir, DEPLOYMENT_DIR)
+	utils.CreateDir(pkg.DeloymentDir)
 
-	// generate a kustomize-able artifact for each requested namespaces, invoke cutomizations from application config file and build package
-	pkg.generatePkg(appConfig)
-
-	// _ = pkg.buildPkgs()
+	// in compliance with application config: generate a kustomize-able artifact, invoke cutomizations and build package
+	pkg.generateApplicationPkg()
 
 	return &pkg
 }
 
-func (pkg *DeploymentPkg) generatePkg(appConfig *config.ApplicationConfig) {
-	for _, ns := range appConfig.Application.Namespaces {
+func (pkg *ApplicationPkg) generateApplicationPkg() {
+	for _, ns := range pkg.AppConfig.Application.Namespaces {
 
 		// generate artifact for current namespace
-		pkg.generatePkgArtifact(ns)
+		pkg.generateNsArtifact(ns)
 		
 		// invoke customizations onto artifact
-		pkg.invokePkgCustomizations(ns)
+		pkg.invokeNsCustomizations(ns)
 
 		// pkg artifact
-		pkg.buildPkg(ns)
+		pkg.buildNsDeployment(ns)
 	}
 }
 
-func (pkg *DeploymentPkg) generatePkgArtifact(ns config.SourceNamespace) {
+func (pkg *ApplicationPkg) generateNsArtifact(ns config.SourceNamespace) {
 	
 	source := filepath.Join(SOURCE_KUSTOMIZE_DIR, ns.Name)
 	// create pkg template at pkg template path
-	cmd := exec.Command("cp", "-r", source, pkg.KustomizeFolder)
+	cmd := exec.Command("cp", "-r", source, pkg.KustomizeDir)
 	if err := cmd.Run(); err != nil {
-		log.Fatalf("Failed to create pkg kustomize template for namespace: %s", ns.Name)
+		log.Fatalf("Failed to generate kustomize template for namespace: %s", ns.Name)
 	}
 }
 
-func (pkg *DeploymentPkg) buildPkg(ns config.SourceNamespace) {
+func (pkg *ApplicationPkg) buildNsDeployment(ns config.SourceNamespace) {
 
 	// define path to namespace template directory
-	nsTmplDir := filepath.Join(pkg.KustomizeFolder, ns.Name, TEMPLATE_DIR)
+	nsTmplDir := filepath.Join(pkg.KustomizeDir, ns.Name, TEMPLATE_DIR)
+	
+	// define path to pkg deployment file
+	nsDeploymentFilePath := filepath.Join(pkg.DeloymentDir, ns.Name + ".yaml")
+
+	// create pkg deployment file
+	nsDeploymentFile, err := os.Create(nsDeploymentFilePath)
+	if err != nil {
+		log.Fatalf("Failed to create deployment file for namespace: %s", ns.Name)
+	}
+	defer nsDeploymentFile.Close()
 
 	// build pkg with kustomize configuration
 	cmd := exec.Command("kustomize", "build", nsTmplDir)
-	
-	// define path to namespace template directory
-	deploymentFile := filepath.Join(pkg.DeloymentFolder, ns.Name + ".yaml")
-
-	// create pkg deployment file
-	pkgDeploymentFile, err := os.Create(deploymentFile)
-	if err != nil {
-		log.Fatalf("Failed to create file for deployment file for namespace: %s", ns.Name)
-	}
-	defer pkgDeploymentFile.Close()
-
-	// write cmd output to deployment file
-	cmd.Stdout = pkgDeploymentFile
-
+	cmd.Stdout = nsDeploymentFile
 	if err = cmd.Run(); err != nil {
-		log.Fatalf("Failed to run kustomize build for namespace: %s", ns.Name)
+		log.Fatalf("Failed to build deployment file with kustomize for namespace: %s", ns.Name)
 	}
 }
