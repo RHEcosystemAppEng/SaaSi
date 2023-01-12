@@ -1,46 +1,31 @@
 package main
 
 import (
-	"fmt"
+	// "fmt"
+	"os"
+	"log"
 
 	"github.com/RHEcosystemAppEng/SaaSi/replica-builder/replica-installer/pkg/packager"
+	"github.com/RHEcosystemAppEng/SaaSi/replica-builder/replica-installer/pkg/config"
+	"github.com/kr/pretty"
+)
+
+var (
+	err error
 )
 
 func main() {
-	// if len(os.Args) != 2 {
-	// 	log.Fatal("Expected 1 argument, got ", len(os.Args)-1)
-	// }
 
-	// namespace := os.Args[1]
-	// pretty.Printf("Deploying application to namespace %s", namespace)\
-
-	pkgNs := "holdings"
-	kustomizePath := "../install-builder/output/Infinity/installer/kustomize"
-
-	pkg, err := packager.NewPkg(pkgNs)
-	if err != nil {
-		fmt.Println(err)
-		return
+	// get application config yaml as input
+	if len(os.Args) != 2 {
+		log.Fatal("Expected 1 argument, got ", len(os.Args)-1)
 	}
 
-	err = pkg.GeneratePkgTemplate(kustomizePath)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
+	// init ApplicationConfig object
+	applicationConfig := config.ReadApplicationConfig(os.Args[1])
+	pretty.Printf("Exporting application %# v", applicationConfig)
 
-	err = pkg.InvokePkgCustomizations()
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-
-	err = pkg.BuildPkg()
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-
-	// DeployPkg()
+	// create deployment package
+	_ = packager.NewDeploymentPkg(applicationConfig)
 
 }

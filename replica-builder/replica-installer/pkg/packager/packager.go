@@ -1,100 +1,106 @@
 package packager
 
 import (
-	"os/exec"
+	"log"
 	"os"
+	"os/exec"
 	"path/filepath"
-	"errors"
 
 	"github.com/google/uuid"
+	"github.com/RHEcosystemAppEng/SaaSi/replica-builder/replica-installer/pkg/config"
+	"github.com/RHEcosystemAppEng/SaaSi/replica-builder/replica-installer/pkg/utils"
 )
 
 const (
+	OUTPUT_DIR = "output"
+	KUSTOMIZE_DIR = "kustomize"
+	DEPLOYMENT_DIR = "deploy"
 	TEMPLATE_DIR = "template"
+
 	COMMON_ANNOTATION_KEY = "app.kubernetes.io/saasi-pkg-uuid:"
-	DEPLOYMENT_FILE_NAME = "deployment.yaml"
+
+	SOURCE_KUSTOMIZE_DIR = "../install-builder/output/Infinity/installer/kustomize"
 )
 
 var (
 	err error
 )
 
-type Package struct {
+type DeploymentPkg struct {
 	Uuid uuid.UUID
-	Namespace string
-	TemplateDirpath string
-	DeploymentFilepath string
+	AppFolder    string
+	KustomizeFolder string
+	DeloymentFolder string
 }
 
-func NewPkg(pkgNs string) (*Package, error) {
+func NewDeploymentPkg(appConfig *config.ApplicationConfig) *DeploymentPkg {
+	
+	// init DeploymentPkg
+	pkg := DeploymentPkg{}
 
-	// struct new pkg
-	Package := Package{
-		Uuid: uuid.New(),
-		Namespace: pkgNs,
-		TemplateDirpath: "",
-		DeploymentFilepath: "",
+	// generate uuid
+	pkg.Uuid = uuid.New()
+
+	// create application directories
+	// application directory
+	pwd, _ := os.Getwd()
+	log.Printf("Running from %v", pwd)
+	pkg.AppFolder = filepath.Join(pwd, OUTPUT_DIR, appConfig.Application.Name)
+	utils.CreateDir(pkg.AppFolder)
+	// kustomize directory for namesapce artifacts
+	pkg.KustomizeFolder = filepath.Join(pkg.AppFolder, KUSTOMIZE_DIR)
+	utils.CreateDir(pkg.KustomizeFolder)
+	// deployment directory for deployment packages
+	pkg.DeloymentFolder = filepath.Join(pkg.AppFolder, DEPLOYMENT_DIR)
+	utils.CreateDir(pkg.DeloymentFolder)
+
+	// generate a kustomize-able artifact for each requested namespaces, invoke cutomizations from application config file and build package
+	pkg.generatePkg(appConfig)
+
+	// _ = pkg.buildPkgs()
+
+	return &pkg
+}
+
+func (pkg *DeploymentPkg) generatePkg(appConfig *config.ApplicationConfig) {
+	for _, ns := range appConfig.Application.Namespaces {
+
+		// generate artifact for current namespace
+		pkg.generatePkgArtifact(ns)
+		
+		// invoke customizations onto artifact
+		pkg.invokePkgCustomizations(ns)
+
+		// pkg artifact
+		pkg.buildPkg(ns)
 	}
-
-	return &Package, nil
 }
 
-func (p *Package) GeneratePkgTemplate(kustomizePath string) error {
-
-	// init path to pkg template
-	pkgTmplPath := filepath.Join(kustomizePath, p.Namespace, p.Uuid.String())
-
-	// init path to base template
-	baseTmplPath := filepath.Join(kustomizePath, p.Namespace, TEMPLATE_DIR)
-
+func (pkg *DeploymentPkg) generatePkgArtifact(ns config.SourceNamespace) {
+	
+	source := filepath.Join(SOURCE_KUSTOMIZE_DIR, ns.Name)
 	// create pkg template at pkg template path
-	cmd := exec.Command("cp", "-r", baseTmplPath, pkgTmplPath)
-	if err = cmd.Run(); err != nil {
-		return errors.New("Failed to create pkg template")
+	cmd := exec.Command("cp", "-r", source, pkg.KustomizeFolder)
+	if err := cmd.Run(); err != nil {
+		log.Fatalf("Failed to create pkg kustomize template for namespace: %s", ns.Name)
 	}
-
-	// update pkg struct
-	p.TemplateDirpath = pkgTmplPath
-
-	return nil
 }
 
-func (p *Package) InvokePkgCustomizations() error {
+func (pkg *DeploymentPkg) buildPkg(ns config.SourceNamespace) {
 
-	// validate kustomize cli
-	if err = validateRequirements(); err != nil {
-		return errors.New("kustomize command not found")
-	}
-
-	// set namespace resource in pkg kustomize template
-	cmd := exec.Command("kustomize", "edit", "set", "namespace", p.Namespace)
-	cmd.Dir = p.TemplateDirpath
-	if err = cmd.Run(); err != nil {
-		return errors.New("Failed to set namesapce by kustomize command")
-	}
-
-	// set common annotation resource in pkg kustomize template
-	cmd = exec.Command("kustomize", "edit", "set", "annotation", COMMON_ANNOTATION_KEY + p.Uuid.String())
-	cmd.Dir = p.TemplateDirpath
-	if err = cmd.Run(); err != nil {
-		return errors.New("Failed to set common annotations by kustomize command")
-	}
-
-	return nil
-}
-
-func (p *Package) BuildPkg() error {
+	// define path to namespace template directory
+	nsTmplDir := filepath.Join(pkg.KustomizeFolder, ns.Name, TEMPLATE_DIR)
 
 	// build pkg with kustomize configuration
-	cmd := exec.Command("kustomize", "build", p.TemplateDirpath)
-
-	// init path to pkg deployment file
-	pkgDeploymentPath := filepath.Join(p.TemplateDirpath, DEPLOYMENT_FILE_NAME)
+	cmd := exec.Command("kustomize", "build", nsTmplDir)
 	
+	// define path to namespace template directory
+	deploymentFile := filepath.Join(pkg.DeloymentFolder, ns.Name + ".yaml")
+
 	// create pkg deployment file
-	pkgDeploymentFile, err := os.Create(pkgDeploymentPath)
+	pkgDeploymentFile, err := os.Create(deploymentFile)
 	if err != nil {
-		return errors.New("Failed to create file for deployment file")
+		log.Fatalf("Failed to create file for deployment file for namespace: %s", ns.Name)
 	}
 	defer pkgDeploymentFile.Close()
 
@@ -102,30 +108,6 @@ func (p *Package) BuildPkg() error {
 	cmd.Stdout = pkgDeploymentFile
 
 	if err = cmd.Run(); err != nil {
-		return errors.New("Failed to run kustomize CLI command")
+		log.Fatalf("Failed to run kustomize build for namespace: %s", ns.Name)
 	}
-
-	// update pkg struct
-	p.DeploymentFilepath = pkgDeploymentPath
-
-	return nil
-}
-
-// func (p *Package) DeployPkg() {
-
-
-// }
-
-// -----------------------
-// --- Private Methods ---
-// -----------------------
-
-func validateRequirements() error {
-
-	// validate kustomize CLI
-	
-	if _, err = exec.LookPath("kustomize"); err != nil {
-		return errors.New("kustomize command not found")
-	}
-	return nil
 }
