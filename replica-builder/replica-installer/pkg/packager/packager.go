@@ -12,18 +12,24 @@ import (
 )
 
 const (
+	SOURCE_KUSTOMIZE_DIR = "../install-builder/output/Infinity/installer/kustomize"
+
 	OUTPUT_DIR = "output"
 	KUSTOMIZE_DIR = "kustomize"
 	DEPLOYMENT_DIR = "deploy"
 	TEMPLATE_DIR = "template"
+	CONFIGMAPS_DIR = "params"
+	SECRETS_DIR = "secrets"
+
+	EMPTY_PLACEHOLDER = "__EMPTY__"
+	MANDATORY_PLACEHOLDER = "__MANDATORY__"
 
 	COMMON_ANNOTATION_KEY = "app.kubernetes.io/saasi-pkg-uuid:"
-
-	SOURCE_KUSTOMIZE_DIR = "../install-builder/output/Infinity/installer/kustomize"
 )
 
 var (
 	err error
+	nsTmplDir string
 )
 
 type ApplicationPkg struct {
@@ -51,7 +57,7 @@ func NewApplicationPkg(appConfig *config.ApplicationConfig) *ApplicationPkg {
 	log.Printf("Running from %v", pwd)
 	pkg.AppDir = filepath.Join(pwd, OUTPUT_DIR, appConfig.Application.Name)
 	utils.CreateDir(pkg.AppDir)
-	// kustomize directory for namesapce artifacts
+	// kustomize directory for namespace artifacts
 	pkg.KustomizeDir = filepath.Join(pkg.AppDir, KUSTOMIZE_DIR)
 	utils.CreateDir(pkg.KustomizeDir)
 	// deployment directory for deployment packages
@@ -89,15 +95,12 @@ func (pkg *ApplicationPkg) generateNsArtifact(ns config.SourceNamespace) {
 }
 
 func (pkg *ApplicationPkg) buildNsDeployment(ns config.SourceNamespace) {
-
-	// define path to namespace template directory
-	nsTmplDir := filepath.Join(pkg.KustomizeDir, ns.Name, TEMPLATE_DIR)
 	
 	// define path to pkg deployment file
-	nsDeploymentFilePath := filepath.Join(pkg.DeloymentDir, ns.Name + ".yaml")
+	nsDeploymentFilepath := filepath.Join(pkg.DeloymentDir, ns.Name + ".yaml")
 
 	// create pkg deployment file
-	nsDeploymentFile, err := os.Create(nsDeploymentFilePath)
+	nsDeploymentFile, err := os.Create(nsDeploymentFilepath)
 	if err != nil {
 		log.Fatalf("Failed to create deployment file for namespace: %s", ns.Name)
 	}

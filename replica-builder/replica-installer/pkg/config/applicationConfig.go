@@ -8,24 +8,35 @@ import (
 )
 
 type ApplicationConfig struct {
-	Application Application `yaml:"application"`
+	Application 	Application 	  `yaml:"application"`
 }
 
 type Application struct {
-	Name       string            `yaml:"name"`
-	Namespaces []SourceNamespace `yaml:"namespaces"`
+	Name       		string            `yaml:"name"`
+	Namespaces 		[]SourceNamespace `yaml:"namespaces"`
 }
 
 type SourceNamespace struct {
-	Name            string           `yaml:"name"`
-	Target			string			 `yaml:"target"`
-	// MandatoryParams []MandatoryParam `yaml:"mandatory-params"`
+	Name            string             `yaml:"name"`
+	Target			string			   `yaml:"target"`
+	ConfigMaps 		[]ConfigMaps 	   `yaml:"params"`
+	Secrets 		[]Secrets 		   `yaml:"secrets"`
 }
 
-// type MandatoryParam struct {
-// 	ConfigMap string   `yaml:"configMap"`
-// 	Params    []string `yaml:"params"`
-// }
+type ConfigMaps struct {
+	ConfigMap 		string		  	   `yaml:"configMap"`
+	Params    		[]Params		   `yaml:"params"`
+}
+
+type Secrets struct {
+	Secret 		    string		   	   `yaml:"secret"`
+	Params    		[]Params		   `yaml:"params"`
+}
+
+type Params struct {
+	Name 			string   		    `yaml:"name"`
+	Value    		string			    `yaml:"value"`
+}
 
 func ReadApplicationConfig(configFile string) *ApplicationConfig {
 	yfile, err := ioutil.ReadFile(configFile)

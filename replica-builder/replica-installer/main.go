@@ -1,7 +1,6 @@
 package main
 
 import (
-	// "fmt"
 	"os"
 	"log"
 
@@ -27,5 +26,4 @@ func main() {
 
 	// create deployment package
 	_ = packager.NewApplicationPkg(applicationConfig)
-
 }
