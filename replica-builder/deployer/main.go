@@ -4,9 +4,10 @@ import (
 	"os"
 	"log"
 
-	"github.com/RHEcosystemAppEng/SaaSi/replica-builder/replica-installer/pkg/packager"
-	"github.com/RHEcosystemAppEng/SaaSi/replica-builder/replica-installer/pkg/config"
 	"github.com/kr/pretty"
+	"github.com/RHEcosystemAppEng/SaaSi/replica-builder/deployer/pkg/packager"
+	"github.com/RHEcosystemAppEng/SaaSi/replica-builder/deployer/pkg/deployer"
+	"github.com/RHEcosystemAppEng/SaaSi/replica-builder/deployer/pkg/config"
 )
 
 var (
@@ -25,5 +26,8 @@ func main() {
 	pretty.Printf("Exporting application %# v", applicationConfig)
 
 	// create deployment package
-	_ = packager.NewApplicationPkg(applicationConfig)
+	applicationPkg := packager.NewApplicationPkg(applicationConfig)
+
+	// deploy deployment package
+	deployer.NewDeployment(applicationPkg)
 }

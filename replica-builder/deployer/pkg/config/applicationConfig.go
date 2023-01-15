@@ -51,16 +51,3 @@ func ReadApplicationConfig(configFile string) *ApplicationConfig {
 	}
 	return &config
 }
-
-// func (a *ApplicationConfig) MandatoryParamsByNSAndConfigMap(namespace string, configMap string) []string {
-// 	for _, ns := range a.Application.Namespaces {
-// 		if ns.Name == namespace {
-// 			for _, params := range ns.MandatoryParams {
-// 				if params.ConfigMap == configMap {
-// 					return params.Params
-// 				}
-// 			}
-// 		}
-// 	}
-// 	return []string{}
-// }

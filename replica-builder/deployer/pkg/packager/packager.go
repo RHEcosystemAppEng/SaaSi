@@ -7,8 +7,8 @@ import (
 	"path/filepath"
 
 	"github.com/google/uuid"
-	"github.com/RHEcosystemAppEng/SaaSi/replica-builder/replica-installer/pkg/config"
-	"github.com/RHEcosystemAppEng/SaaSi/replica-builder/replica-installer/pkg/utils"
+	"github.com/RHEcosystemAppEng/SaaSi/replica-builder/deployer/pkg/config"
+	"github.com/RHEcosystemAppEng/SaaSi/replica-builder/deployer/pkg/utils"
 )
 
 const (
@@ -72,6 +72,9 @@ func NewApplicationPkg(appConfig *config.ApplicationConfig) *ApplicationPkg {
 
 func (pkg *ApplicationPkg) generateApplicationPkg() {
 	for _, ns := range pkg.AppConfig.Application.Namespaces {
+
+		// define path to namespace template directory
+		nsTmplDir = filepath.Join(pkg.KustomizeDir, ns.Name, TEMPLATE_DIR)
 
 		// generate artifact for current namespace
 		pkg.generateNsArtifact(ns)

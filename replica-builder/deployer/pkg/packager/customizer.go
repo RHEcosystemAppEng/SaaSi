@@ -9,17 +9,14 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/RHEcosystemAppEng/SaaSi/replica-builder/replica-installer/pkg/config"
-	"github.com/RHEcosystemAppEng/SaaSi/replica-builder/replica-installer/pkg/utils"
+	"github.com/RHEcosystemAppEng/SaaSi/replica-builder/deployer/pkg/config"
+	"github.com/RHEcosystemAppEng/SaaSi/replica-builder/deployer/pkg/utils"
 )
 
 func (pkg *ApplicationPkg)invokeNsCustomizations(ns config.SourceNamespace) { 
 
 	// validate kustomize cli
 	utils.ValidateRequirements()
-
-	// define path to namespace template directory
-	nsTmplDir = filepath.Join(pkg.KustomizeDir, ns.Name, TEMPLATE_DIR)
 
 	// set kustomize.yaml
 	pkg.customizeKustomize(ns)
