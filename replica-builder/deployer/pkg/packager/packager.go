@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	SOURCE_KUSTOMIZE_DIR = "../install-builder/output/Infinity/installer/kustomize"
+	SOURCE_KUSTOMIZE_DIR = "../exporter/output/Infinity/installer/kustomize"
 
 	OUTPUT_DIR = "output"
 	KUSTOMIZE_DIR = "kustomize"

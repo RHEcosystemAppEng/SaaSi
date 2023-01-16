@@ -11,7 +11,7 @@ import (
 
 	api "github.com/openshift/api"
 
-	"github.com/RHEcosystemAppEng/SaaSi/replica-builder/install-builder/pkg/config"
+	"github.com/RHEcosystemAppEng/SaaSi/replica-builder/exporter/pkg/config"
 	"golang.org/x/exp/slices"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"

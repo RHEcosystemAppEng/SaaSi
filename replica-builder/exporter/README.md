@@ -1,6 +1,6 @@
-# install-builder
+# exporter
 A Golang CLI tool to extract configurations from a live OpenShit/Kubernetes environment and generate a reusable, configurable
-installer for the [replica-installer](../replica-installer/README.md) tool.
+installer for the [deployer](../deployer/README.md) tool.
 
 ## Dependencies
 * [Konveyor Crane](https://konveyor.io/tools/crane/) [Golang](https://go.dev/) packages to export the original configuration and remove cluster specific settings 
@@ -31,7 +31,7 @@ installer for the [replica-installer](../replica-installer/README.md) tool.
       * Errors must be raised while trying to install the default template for the secrets
 
 ## Builder configuration
-The `install-builder` runs using a configuration that specifies the packaging behavior: 
+The `exporter` runs using a configuration that specifies the packaging behavior: 
 ```yaml
 application:
   # This creates an installer package named APP
@@ -101,7 +101,7 @@ KEY1=__EMPTY__
 ```
 
 ## Customize and install the template
-Simple procedure that will be automated using the [replica-installer](../replica-installer/README.md) tool.
+Simple procedure that will be automated using the [deployer](../deployer/README.md) tool.
 
 ```bash
 cd output/APPLICATION/installer/kustomize/NAMESPACE
@@ -114,4 +114,4 @@ kustomize build . | oc apply -f-
 ```
 
 ## Issues
-GitHub [install-builder issues](https://github.com/RHEcosystemAppEng/SaaSi/issues?q=is%3Aopen+is%3Aissue+label%3Ainstall-builder)
+GitHub [exporter issues](https://github.com/RHEcosystemAppEng/SaaSi/issues?q=is%3Aopen+is%3Aissue+label%3Aexporter)
