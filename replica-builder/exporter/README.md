@@ -23,7 +23,7 @@ installer for the [deployer](../deployer/README.md) tool.
   * Create a sample `template` for the overlayed configuration where the developer can apply customizations
     * All the keys in any given `ConfigMap` can be overridden in properties files called `CONFIGMAP_NAME.env`
       * The skeleton of these files are automatically generated
-      * All the key names for non-mandatory parameters are commented out and set to `__EMPTY__` value
+      * All the key names for non-mandatory parameters are commented out and set to `__DEFAULT__` value
       * For mandatory parameters, the keys are set to `__MANDATORY__` value 
     * All the keys in the managed `Secret`s are customizable in the same way
       * The `template` overlay re-creates the `Secret`s from the template files called `SECRET_NAME.env`
@@ -92,12 +92,12 @@ The `template` overlay is an example of a possible `kustomize` overlay, with ske
 `ConfigMap`s parameters (remove the `#` comment and set the desired value) and all the `Secret` values:
 ```bash
 > cat output/Infinity/installer/kustomize/holdings/template/params/CONFIG_MAP1.env
-#KEY1=__EMPTY__
-#KEY2=__EMPTY__
+#KEY1=__DEFAULT__
+#KEY2=__DEFAULT__
 KEY3=__MANDATORY__
 
 > cat output/Infinity/installer/kustomize/holdings/template/secrets/SECRET1.env
-KEY1=__EMPTY__
+KEY1=__DEFAULT__
 ```
 
 ## Customize and install the template

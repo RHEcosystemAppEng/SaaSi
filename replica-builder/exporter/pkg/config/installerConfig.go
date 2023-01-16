@@ -9,7 +9,7 @@ import (
 
 var ParamsFolder = "params"
 var SecretsFolder = "secrets"
-var NoValue = "__EMPTY__"
+var NoValue = "__DEFAULT__"
 var MandatoryValue = "__MANDATORY__"
 var KustomizationFile = "kustomization.yaml"
 

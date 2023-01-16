@@ -21,7 +21,7 @@ const (
 	CONFIGMAPS_DIR = "params"
 	SECRETS_DIR = "secrets"
 
-	EMPTY_PLACEHOLDER = "__EMPTY__"
+	EMPTY_PLACEHOLDER = "__DEFAULT__"
 	MANDATORY_PLACEHOLDER = "__MANDATORY__"
 
 	COMMON_ANNOTATION_KEY = "app.kubernetes.io/saasi-pkg-uuid:"
