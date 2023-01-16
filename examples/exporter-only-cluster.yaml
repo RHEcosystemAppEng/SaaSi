@@ -4,5 +4,5 @@ deployer:
     user: USERNAME
     # Must be valid at the moment we export the configuration
     token: TOKEN
-    export: false
+    export: true
   application: {}
