@@ -12,16 +12,16 @@ var (
 	err error
 )
 
-func NewDeployment(pkg *packager.ApplicationPkg) {
-	
-	// validate kustomize cli
-	utils.ValidateRequirements()
+func DeployApplication(pkg *packager.ApplicationPkg) {
 
-	// set the namespace resource to target namespace
+	// validate oc cli
+	utils.ValidateRequirements(utils.OC)
+
+	// deploy application package using oc cli
 	cmd := exec.Command("oc", "apply", "-f", ".")
 	cmd.Dir = pkg.DeloymentDir
 	if err = cmd.Run(); err != nil {
-		log.Fatalf("Failed deploy files from deployment directory: %s", pkg.DeloymentDir)
+		log.Fatalf("Failed to deploy files from deployment directory: %s, Error: %s", pkg.DeloymentDir, err)
 	}
 	log.Printf("Successfully deployed all files from deployment directory: %s", pkg.DeloymentDir)
 }

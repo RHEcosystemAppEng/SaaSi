@@ -1,10 +1,10 @@
 package packager
 
 import (
-	"log"
-	"fmt"
 	"bytes"
-    "io/ioutil"
+	"fmt"
+	"io/ioutil"
+	"log"
 	"os/exec"
 	"path/filepath"
 	"strings"
@@ -13,10 +13,10 @@ import (
 	"github.com/RHEcosystemAppEng/SaaSi/replica-builder/deployer/pkg/utils"
 )
 
-func (pkg *ApplicationPkg)invokeNsCustomizations(ns config.SourceNamespace) { 
+func (pkg *ApplicationPkg) invokeNsCustomizations(ns config.Namespaces) {
 
 	// validate kustomize cli
-	utils.ValidateRequirements()
+	utils.ValidateRequirements(utils.KUSTOMIZE)
 
 	// set kustomize.yaml
 	pkg.customizeKustomize(ns)
@@ -26,36 +26,35 @@ func (pkg *ApplicationPkg)invokeNsCustomizations(ns config.SourceNamespace) {
 
 	// set secrets
 	customizeParams(ns, SECRETS_DIR)
-	
 
 }
 
-func (pkg *ApplicationPkg)customizeKustomize(ns config.SourceNamespace) {
-	
+func (pkg *ApplicationPkg) customizeKustomize(ns config.Namespaces) {
+
 	// set the namespace resource to target namespace
 	cmd := exec.Command("kustomize", "edit", "set", "namespace", ns.Target)
 	cmd.Dir = nsTmplDir
 	if err = cmd.Run(); err != nil {
-		log.Fatalf("Failed to set namespace resource in %s template", ns.Name)
+		log.Fatalf("Failed to set namespace resource in %s template, Error: %s", ns.Name, err)
 	}
 
 	// set a common annotation to uuid
-	cmd = exec.Command("kustomize", "edit", "set", "annotation", COMMON_ANNOTATION_KEY + pkg.Uuid.String())
+	cmd = exec.Command("kustomize", "edit", "set", "annotation", COMMON_ANNOTATION_KEY+pkg.Uuid.String())
 	cmd.Dir = nsTmplDir
 	if err = cmd.Run(); err != nil {
-		log.Fatalf("Failed to set uuid common annotations in %s template", ns.Name)
+		log.Fatalf("Failed to set uuid common annotations in %s template, Error: %s", ns.Name, err)
 	}
 }
 
-func customizeParams(ns config.SourceNamespace, paramsDir string ) {
-	
+func customizeParams(ns config.Namespaces, paramsDir string) {
+
 	// select param type
 	if paramsDir == CONFIGMAPS_DIR {
 		// customize configmap params
 		for _, configMap := range ns.ConfigMaps {
 
 			// define configmap filepath
-			configMapsFilepath := filepath.Join(nsTmplDir, paramsDir, configMap.ConfigMap + ".env")
+			configMapsFilepath := filepath.Join(nsTmplDir, paramsDir, configMap.ConfigMap+".env")
 			// if configmap filepath exists, replace configmap params with custom values
 			if utils.FileExists(configMapsFilepath) {
 				// replace configmap params with custom values
@@ -69,25 +68,24 @@ func customizeParams(ns config.SourceNamespace, paramsDir string ) {
 		for _, secret := range ns.Secrets {
 
 			// define secret filepath
-			secretsMapFilepath := filepath.Join(nsTmplDir, paramsDir, secret.Secret + ".env")
+			secretsMapFilepath := filepath.Join(nsTmplDir, paramsDir, secret.Secret+".env")
 			// if secret filepath exists, replace secret params with custom values
 			if utils.FileExists(secretsMapFilepath) {
 				// replace secret params with custom values
-				replaceParamValues(secretsMapFilepath, secret.Params) 
+				replaceParamValues(secretsMapFilepath, secret.Params)
 			} else {
 				log.Printf("WARNING: secret \"%s\" does not exist", secret.Secret)
 			}
 		}
 	}
- }
+}
 
-
- func replaceParamValues(file string, params []config.Params) {
+func replaceParamValues(file string, params []config.ApplicationParams) {
 
 	// read param file
 	output, err := ioutil.ReadFile(file)
 	if err != nil {
-		log.Fatalf("Could not read file %s", file)
+		log.Fatalf("Could not read file %s, Error: %s", file, err)
 	}
 
 	// parse param file output to string
@@ -115,6 +113,6 @@ func customizeParams(ns config.SourceNamespace, paramsDir string ) {
 
 	// write changes to param file
 	if err = ioutil.WriteFile(file, output, 0666); err != nil {
-		log.Fatalf("Could not update file %s with custom params", file)
-	} 
+		log.Fatalf("Could not update file %s with custom params, Error: %s", file, err)
+	}
 }
