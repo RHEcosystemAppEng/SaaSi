@@ -1,6 +1,5 @@
 # deployer
-A Golang CLI tool to extract configurations from a live OpenShit/Kubernetes environment and generate a reusable, configurable
-installer for the [deployer](./deployer/README.md) tool.
+A Golang CLI tool to deploy configurations extracted from a live OpenShit/Kubernetes environment from the [exporter](../exporter/README.md) tool.
 
 ## Dependencies
 * Use [kustomize](konveyor.io/tools/crane/) to export the original configuration and remove cluster specific settings
