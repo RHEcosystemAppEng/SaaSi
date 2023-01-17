@@ -1,0 +1,18 @@
+deployer:
+  cluster:
+    fromCluster: NAME_OF_SOURCE_CLUSTER_PACKAGE
+    # Must be unique
+    userName: CUSTOM_CLUSTER_NAME
+    # These will be eventually put in a secured store (after MVP1)
+    # For MVP1 just store the AWS settings in a fixed vault/secret
+    aws:
+      aws_public_domain: <PUBLIC_DOMAIN_ROUTE53_SERVICE>
+      aws_account_name: <ACCOUNT_NAME>
+      aws_access_key_id: <SA_ACCESS_KEY>
+      aws_secret_access_key: <SA_SECRET_ACCESS_KEY>
+    params:
+      # All are optional
+      CLUSTER_NAME: ABCDEFG
+      CLUSTER_BASE_DOMAIN: ABCDEFG
+      WORKER_COUNT: NNN
+  application: {}

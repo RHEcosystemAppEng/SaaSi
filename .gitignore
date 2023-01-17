@@ -1,2 +1,6 @@
 .*.swp
 exporter/results/
+/replica-builder/exporter/output*/
+/replica-builder/deployer/output*/
+/replica-builder/exporter/infinity*.yaml
+/replica-builder/deployer/infinity*.yaml
