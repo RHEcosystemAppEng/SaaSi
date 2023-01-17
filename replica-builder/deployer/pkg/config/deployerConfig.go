@@ -48,8 +48,9 @@ type ClusterParams struct {
 // ----------------------
 
 type Application struct {
-	Name       string       `yaml:"name"`
-	Namespaces []Namespaces `yaml:"namespaces"`
+	Name                   string       `yaml:"name"`
+	NamespaceMappingFormat string       `yaml:"namespaceMappingFormat"`
+	Namespaces             []Namespaces `yaml:"namespaces"`
 }
 
 type Namespaces struct {

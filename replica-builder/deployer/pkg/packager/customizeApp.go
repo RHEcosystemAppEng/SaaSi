@@ -7,6 +7,7 @@ import (
 	"log"
 	"os/exec"
 	"path/filepath"
+	regex "regexp"
 	"strings"
 
 	"github.com/RHEcosystemAppEng/SaaSi/replica-builder/deployer/pkg/config"
@@ -31,8 +32,11 @@ func (pkg *ApplicationPkg) invokeNsCustomizations(ns config.Namespaces) {
 
 func (pkg *ApplicationPkg) customizeKustomize(ns config.Namespaces) {
 
+	// establish namespace naming convention
+	targetNsName := pkg.establishTargetNsName(ns)
+
 	// set the namespace resource to target namespace
-	cmd := exec.Command("kustomize", "edit", "set", "namespace", ns.Target)
+	cmd := exec.Command("kustomize", "edit", "set", "namespace", targetNsName)
 	cmd.Dir = nsTmplDir
 	if err = cmd.Run(); err != nil {
 		log.Fatalf("Failed to set namespace resource in %s template, Error: %s", ns.Name, err)
@@ -115,4 +119,19 @@ func replaceParamValues(file string, params []config.ApplicationParams) {
 	if err = ioutil.WriteFile(file, output, 0666); err != nil {
 		log.Fatalf("Could not update file %s with custom params, Error: %s", file, err)
 	}
+}
+
+func (pkg *ApplicationPkg) establishTargetNsName(ns config.Namespaces) string {
+
+	if ns.Target != "" {
+		return ns.Target
+	}
+	if nsf := pkg.AppConfig.NamespaceMappingFormat; nsf != "" {
+		if match, _ := regex.MatchString("(^%s\\S+)|(\\S+%s\\S+)|(\\S+%s$)", nsf); match {
+			return fmt.Sprintf(pkg.AppConfig.NamespaceMappingFormat, ns.Name)
+		} else {
+			log.Printf("WARNING: NamespaceMappingFormat does not match required format, using original namespace name")
+		}
+	}
+	return ns.Name
 }
