@@ -23,18 +23,18 @@ func main() {
 	}
 
 	// Unmarshal deployer config and get cluster and application configs
-	ComponentConfig := config.ReadDeployerConfig(os.Args[1])
-	pretty.Printf("Deploying the following configuration: \n%# v", ComponentConfig)
+	componentConfig := config.ReadDeployerConfig(os.Args[1])
+	pretty.Printf("Deploying the following configuration: \n%# v", componentConfig)
 
 	//
 	// TODO - create and deploy cluster
 	//
 
 	// check if application deployment has been requested
-	if !reflect.ValueOf(ComponentConfig.Application).IsZero() {
+	if !reflect.ValueOf(componentConfig.Application).IsZero() {
 
 		// create application deployment package
-		applicationPkg := packager.NewApplicationPkg(ComponentConfig.Application)
+		applicationPkg := packager.NewApplicationPkg(componentConfig.Application)
 
 		// deploy application deployment package
 		deployer.DeployApplication(applicationPkg)
