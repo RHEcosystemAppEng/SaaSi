@@ -1,4 +1,4 @@
-/replica-builder/install-builder/output*/
-/replica-builder/replica-installer/output*/
-/replica-builder/install-builder/infinity.yaml
-/replica-builder/replica-installer/infinity.yaml
+/replica-builder/exporter/output*/
+/replica-builder/deployer/output*/
+/replica-builder/exporter/infinity*.yaml
+/replica-builder/deployer/infinity*.yaml

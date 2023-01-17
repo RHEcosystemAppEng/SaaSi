@@ -1,13 +1,13 @@
-# replica-installer
+# deployer
 A Golang CLI tool to extract configurations from a live OpenShit/Kubernetes environment and generate a reusable, configurable
-installer for the [replica-installer](../replica-installer/README.md) tool.
+installer for the [deployer](../deployer/README.md) tool.
 
 ## Dependencies
 * Use [kustomize](konveyor.io/tools/crane/) to export the original configuration and remove cluster specific settings
   (e.g. IP addresses, status, ...)
 
 ## Installer configuration
-The `replica-installer` runs using a configuration to specify how to install the packaged configuration:
+The `deployer` runs using a configuration to specify how to install the packaged configuration:
 * For each namespace we can define a target namespace name, reuse the original one or apply a common strategy to transform
 the initial name into the new one
 * For all the mandatory and optional parameters defined in `ConfigMaps`, we can define the desired value

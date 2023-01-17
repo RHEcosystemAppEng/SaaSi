@@ -1,6 +1,6 @@
-# install-builder
+# exporter
 A Golang CLI tool to extract configurations from a live OpenShit/Kubernetes environment and generate a reusable, configurable
-installer for the [replica-installer](../replica-installer/README.md) tool.
+installer for the [deployer](../deployer/README.md) tool.
 
 ## Dependencies
 * [Konveyor Crane](https://konveyor.io/tools/crane/) [Golang](https://go.dev/) packages to export the original configuration and remove cluster specific settings 
@@ -23,7 +23,7 @@ installer for the [replica-installer](../replica-installer/README.md) tool.
   * Create a sample `template` for the overlayed configuration where the developer can apply customizations
     * All the keys in any given `ConfigMap` can be overridden in properties files called `CONFIGMAP_NAME.env`
       * The skeleton of these files are automatically generated
-      * All the key names for non-mandatory parameters are commented out and set to `__EMPTY__` value
+      * All the key names for non-mandatory parameters are commented out and set to `__DEFAULT__` value
       * For mandatory parameters, the keys are set to `__MANDATORY__` value 
     * All the keys in the managed `Secret`s are customizable in the same way
       * The `template` overlay re-creates the `Secret`s from the template files called `SECRET_NAME.env`
@@ -31,7 +31,7 @@ installer for the [replica-installer](../replica-installer/README.md) tool.
       * Errors must be raised while trying to install the default template for the secrets
 
 ## Builder configuration
-The `install-builder` runs using a configuration that specifies the packaging behavior: 
+The `exporter` runs using a configuration that specifies the packaging behavior: 
 ```yaml
 application:
   # This creates an installer package named APP
@@ -92,16 +92,16 @@ The `template` overlay is an example of a possible `kustomize` overlay, with ske
 `ConfigMap`s parameters (remove the `#` comment and set the desired value) and all the `Secret` values:
 ```bash
 > cat output/Infinity/installer/kustomize/holdings/template/params/CONFIG_MAP1.env
-#KEY1=__EMPTY__
-#KEY2=__EMPTY__
+#KEY1=__DEFAULT__
+#KEY2=__DEFAULT__
 KEY3=__MANDATORY__
 
 > cat output/Infinity/installer/kustomize/holdings/template/secrets/SECRET1.env
-KEY1=__EMPTY__
+KEY1=__DEFAULT__
 ```
 
 ## Customize and install the template
-Simple procedure that will be automated using the [replica-installer](../replica-installer/README.md) tool.
+Simple procedure that will be automated using the [deployer](../deployer/README.md) tool.
 
 ```bash
 cd output/APPLICATION/installer/kustomize/NAMESPACE
@@ -114,4 +114,4 @@ kustomize build . | oc apply -f-
 ```
 
 ## Issues
-GitHub [install-builder issues](https://github.com/RHEcosystemAppEng/SaaSi/issues?q=is%3Aopen+is%3Aissue+label%3Ainstall-builder)
+GitHub [exporter issues](https://github.com/RHEcosystemAppEng/SaaSi/issues?q=is%3Aopen+is%3Aissue+label%3Aexporter)

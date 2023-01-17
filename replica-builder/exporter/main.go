@@ -4,8 +4,8 @@ import (
 	"log"
 	"os"
 
-	config "github.com/RHEcosystemAppEng/SaaSi/replica-builder/install-builder/pkg/config"
-	"github.com/RHEcosystemAppEng/SaaSi/replica-builder/install-builder/pkg/installer"
+	config "github.com/RHEcosystemAppEng/SaaSi/replica-builder/exporter/pkg/config"
+	"github.com/RHEcosystemAppEng/SaaSi/replica-builder/exporter/pkg/installer"
 	"github.com/kr/pretty"
 )
 

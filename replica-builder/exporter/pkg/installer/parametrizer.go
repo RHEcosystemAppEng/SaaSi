@@ -11,7 +11,7 @@ import (
 
 	api "github.com/openshift/api"
 
-	"github.com/RHEcosystemAppEng/SaaSi/replica-builder/install-builder/pkg/config"
+	"github.com/RHEcosystemAppEng/SaaSi/replica-builder/exporter/pkg/config"
 	"golang.org/x/exp/slices"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -140,7 +140,7 @@ func (p *Parametrizer) handleSecret(secretFile string, secret *v1.Secret) {
 		log.Printf("Creating secret configuration template %s", secretsFile)
 
 		for key, _ := range secret.Data {
-			AppendToFile(secretsFile, fmt.Sprintf("%s=%s\n", key, config.NoValue))
+			AppendToFile(secretsFile, fmt.Sprintf("%s=%s\n", key, config.MandatoryValue))
 		}
 	}
 	os.Rename(secretFile, BackupFile(secretFile))

@@ -1,4 +1,4 @@
-module github.com/RHEcosystemAppEng/SaaSi/replica-builder/replica-installer
+module github.com/RHEcosystemAppEng/SaaSi/replica-builder/deployer
 
 go 1.19
 

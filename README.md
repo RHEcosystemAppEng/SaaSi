@@ -5,12 +5,12 @@ One Stop shop for hybrid cloud native application packaging and deployment tools
 Composed by two components:
 * [replica-builder](./replica-builder/README.md): a tool to replicate an existing OpenShift/Kubernetes environment on 
 multiple clusters and namespaces. Consists of two components:
-  * [install-builder](./replica-builder/install-builder/README.md) a Golang CLI tool to extract and manipulate the configured resources
+  * [exporter](./replica-builder/exporter/README.md) a Golang CLI tool to extract and manipulate the configured resources
     from a running environment and generate a reusable installer
-  * [replica-installer](./replica-builder/replica-installer/README.md) a Golang CLI tool to replicate the initial environment on different
+  * [deployer](./replica-builder/deployer/README.md) a Golang CLI tool to replicate the initial environment on different
     clusters and namespaces
 * [saas-engine](./saas-engine/README.md): TBD
-  * Uses the [replica-installer](./replica-builder/replica-installer) tool defined in the `replica-builder` product
+  * Uses the [deployer](./replica-builder/deployer) tool defined in the `replica-builder` product
 
 ![](./images/architecture.jpg)
 
