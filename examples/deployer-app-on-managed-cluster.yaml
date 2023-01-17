@@ -1,0 +1,36 @@
+deployer:
+  cluster:
+    userName: CUSTOM_CLUSTER_NAME
+  application:
+    name: APP
+    namespaceMappingFormat: "%s-prod"
+    namespaces:
+      - name: NS1
+        # If missing, the namespaceMappingFormat or the original name are applied
+        target: NEW-NS1
+        params:
+          - configMap: MAP-1
+              params:
+                  - name: PARAM-1
+                    value: VALUE-1
+                    - name: "..."
+                      value: "..."
+          - configMap: MAP-2
+              params:
+                - name: PARAM-1
+                  value: VALUE-1
+                - name: "..."
+                  value: "..."
+        secrets:
+          - secret: SECRET-1
+              params:
+                  - name: PARAM-1
+                    value: VALUE-1
+                    - name: "..."
+                      value: "..."
+          - configMap: SECRET-2
+              params:
+                  - name: PARAM-1
+                    value: VALUE-1
+                    - name: "..."
+                      value: "..."
