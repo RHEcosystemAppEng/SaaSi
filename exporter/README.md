@@ -101,7 +101,7 @@ KEY1=__DEFAULT__
 ```
 
 ## Customize and install the template
-Simple procedure that will be automated using the [deployer](../deployer/README.md) tool.
+Simple procedure that will be automated using the [deployer](./deployer/README.md) tool.
 
 ```bash
 cd output/APPLICATION/installer/kustomize/NAMESPACE

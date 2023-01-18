@@ -1,55 +1,24 @@
 # SaaSi
-One Stop shop for hybrid cloud native application packing and deployment tools 
-
-## Exporter
-The exporter is the component which collects the needed infrastructure details
-to generate a YAML manifest that could be used to setup the lab by the
-[`ocp-lab-provisioner`](https://github.com/RHEcosystemAppEng/ocp_labs_provisioner)
-tool.
-
-The exporter requires the `oc` CLI installed and configured to access the
-Openshift cluster that you want to clone. To run it, please use the following
-commands:
-```sh
-# Access the exporter's folder
-cd exporter
-
-# Check your oc cli connection
-oc cluster-info
-
-# Run the exporter
-./exporter.sh
-
-# Check results
-ls ./results
-```
-
-### Customization
-After the env var is created containing all the required parameters, the next
-step is to apply the custom configuration file including also the generated file
-in the previous step.
-```
-# An example of this file could be found here:
-vim custom_config.env
-
-# Run parser
-./parser.sh \
-  -s ./results/<SOURCE_CLUSTER_FILE>.env \
-  -c ./<CUSTOMIZATION_FILE>.env
-```
+One Stop shop for hybrid cloud native application packing and deployment tools
 
 ## Software architecture
-Composed by two components:
-* [replica-builder](./replica-builder/README.md): a tool to replicate an existing OpenShift/Kubernetes environment on 
-multiple clusters and namespaces. Consists of two components:
-  * [exporter](./replica-builder/exporter/README.md) a Golang CLI tool to extract and manipulate the configured resources
-    from a running environment and generate a reusable installer
-  * [deployer](./replica-builder/deployer/README.md) a Golang CLI tool to replicate the initial environment on different
-    clusters and namespaces
-* [saas-engine](./saas-engine/README.md): TBD
-  * Uses the [deployer](./replica-builder/deployer) tool defined in the `replica-builder` product
+A tool to replicate an existing OpenShift/Kubernetes environment on multiple clusters and namespaces. Consists of two components:
+* [exporter](./exporter/README.md) a Golang CLI tool to extract and manipulate the configured resources
+  from a running environment and generate a reusable installer
+* [deployer](./deployer/README.md) a Golang CLI tool to replicate the initial environment on different
+  clusters and namespaces
 
 ![](./images/architecture.jpg)
+
+## Features
+* Manage multiple namespaces
+  * Allow mapping of per-namespace target
+  * Provides predefines mapping policies
+* Customize deployment parameters
+  * Override only what is actually needed
+  * Ensure that mandatory options are provided
+  * Encrypt secrets
+    **TODO**
 
 ## ADRs placeholders
 - reasons to select Konveyor tools
