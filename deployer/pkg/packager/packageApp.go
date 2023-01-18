@@ -67,6 +67,7 @@ func NewApplicationPkg(appConfig config.Application) *ApplicationPkg {
 	pkg.DeloymentDir = filepath.Join(pkg.AppDir, DEPLOYMENT_DIR)
 	utils.CreateDir(pkg.DeloymentDir)
 
+	// init UnsetMandatoryParams to empty dict
 	pkg.UnsetMandatoryParams = map[string][]string{}
 
 	// in compliance with application config: generate a kustomize-able artifact, invoke cutomizations and build package
