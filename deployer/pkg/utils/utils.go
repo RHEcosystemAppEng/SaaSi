@@ -1,9 +1,11 @@
 package utils
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"os/exec"
+	"strings"
 )
 
 const (
@@ -39,4 +41,14 @@ func FileExists(filename string) bool {
 		return false
 	}
 	return !info.IsDir()
+}
+
+func StringifyMap(mapSrc map[string][]string) string {
+
+	var mapStr string
+
+	for key, value := range mapSrc {
+		mapStr = fmt.Sprintf("%s%s:\n%v.\n", mapStr, key, strings.Join(value, ", "))
+	}
+	return mapStr
 }
