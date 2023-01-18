@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/RHEcosystemAppEng/SaaSi/replica-builder/exporter/pkg/config"
+	"github.com/RHEcosystemAppEng/SaaSi/exporter/pkg/config"
 	"github.com/konveyor/crane/cmd/apply"
 	"github.com/konveyor/crane/cmd/export"
 	"github.com/konveyor/crane/cmd/transform"

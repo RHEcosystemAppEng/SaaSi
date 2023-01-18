@@ -10,8 +10,8 @@ import (
 	regex "regexp"
 	"strings"
 
-	"github.com/RHEcosystemAppEng/SaaSi/replica-builder/deployer/pkg/config"
-	"github.com/RHEcosystemAppEng/SaaSi/replica-builder/deployer/pkg/utils"
+	"github.com/RHEcosystemAppEng/SaaSi/deployer/pkg/config"
+	"github.com/RHEcosystemAppEng/SaaSi/deployer/pkg/utils"
 )
 
 func (pkg *ApplicationPkg) invokeNsCustomizations(ns config.Namespaces) {
@@ -27,6 +27,9 @@ func (pkg *ApplicationPkg) invokeNsCustomizations(ns config.Namespaces) {
 
 	// set secrets
 	customizeParams(ns, SECRETS_DIR)
+
+	// check if any unset mandatory params still exist in namespace template files
+	pkg.inspectMandatoryParams(ns)
 
 }
 
