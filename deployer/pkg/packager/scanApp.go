@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/RHEcosystemAppEng/SaaSi/replica-builder/deployer/pkg/config"
+	"github.com/RHEcosystemAppEng/SaaSi/deployer/pkg/config"
 )
 
 func (pkg *ApplicationPkg) inspectMandatoryParams(ns config.Namespaces) {

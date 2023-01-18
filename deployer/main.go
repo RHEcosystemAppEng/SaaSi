@@ -5,10 +5,10 @@ import (
 	"os"
 	"reflect"
 
-	"github.com/RHEcosystemAppEng/SaaSi/replica-builder/deployer/pkg/config"
-	"github.com/RHEcosystemAppEng/SaaSi/replica-builder/deployer/pkg/deployer"
-	"github.com/RHEcosystemAppEng/SaaSi/replica-builder/deployer/pkg/packager"
-	"github.com/RHEcosystemAppEng/SaaSi/replica-builder/deployer/pkg/utils"
+	"github.com/RHEcosystemAppEng/SaaSi/deployer/pkg/config"
+	"github.com/RHEcosystemAppEng/SaaSi/deployer/pkg/deployer"
+	"github.com/RHEcosystemAppEng/SaaSi/deployer/pkg/packager"
+	"github.com/RHEcosystemAppEng/SaaSi/deployer/pkg/utils"
 	"github.com/kr/pretty"
 )
 

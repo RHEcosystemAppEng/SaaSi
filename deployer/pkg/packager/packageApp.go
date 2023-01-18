@@ -6,8 +6,8 @@ import (
 	"os/exec"
 	"path/filepath"
 
-	"github.com/RHEcosystemAppEng/SaaSi/replica-builder/deployer/pkg/config"
-	"github.com/RHEcosystemAppEng/SaaSi/replica-builder/deployer/pkg/utils"
+	"github.com/RHEcosystemAppEng/SaaSi/deployer/pkg/config"
+	"github.com/RHEcosystemAppEng/SaaSi/deployer/pkg/utils"
 	"github.com/google/uuid"
 )
 

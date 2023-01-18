@@ -9,7 +9,7 @@
             "type": "go",
             "request": "launch",
             "mode": "auto",
-            "program": "replica-builder/exporter/main.go",
+            "program": "exporter/main.go",
             "args": ["infinity.yaml"]
         },
         {
@@ -17,7 +17,7 @@
             "type": "go",
             "request": "launch",
             "mode": "auto",
-            "program": "replica-builder/deployer/main.go",
+            "program": "deployer/main.go",
         }
     ]
 }
