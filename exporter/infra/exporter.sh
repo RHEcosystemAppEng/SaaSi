@@ -46,7 +46,9 @@ export NETWORK_TYPE=$(oc get network.config/cluster -o go-template='{{.spec.netw
 
 
 echo "Getting Registry Info..."
-export REGISTRY_ROUTE_HOSTNAME=$(oc get routes image-registry -n openshift-image-registry -o go-template='{{.spec.host}}' | sed -r "s/(.*).apps..*/\1.$CLUSTER_NAME.$CLUSTER_BASE_DOMAIN/g")
+# Don't need to export it because is a internal var
+_REGISTRY_ROUTE_NAME="$(oc get routes -n openshift-image-registry -o=jsonpath='{.items[?(@.metadata.annotations.imageregistry\.openshift\.io=="true")].metadata.name}')"
+export REGISTRY_ROUTE_HOSTNAME=$(oc get routes $_REGISTRY_ROUTE_NAME -n openshift-image-registry -o go-template='{{.spec.host}}' | sed -r "s/(.*).apps..*/\1.$CLUSTER_NAME.$CLUSTER_BASE_DOMAIN/g")
 if [[ "$(echo $REGISTRY_ROUTE_INFO | wc -l)" -ne 0 ]]; then
   export REGISTRY_IS_EXPOSED="true"
 else
