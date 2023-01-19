@@ -6,5 +6,4 @@ exporter:
     user: USERNAME
     # Must be valid at the moment we export the configuration
     token: TOKEN
-    export: true
   application: {}
