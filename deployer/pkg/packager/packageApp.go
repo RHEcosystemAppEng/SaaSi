@@ -6,8 +6,8 @@ import (
 	"os/exec"
 	"path/filepath"
 
-	"github.com/RHEcosystemAppEng/SaaSi/replica-builder/deployer/pkg/config"
-	"github.com/RHEcosystemAppEng/SaaSi/replica-builder/deployer/pkg/utils"
+	"github.com/RHEcosystemAppEng/SaaSi/deployer/pkg/config"
+	"github.com/RHEcosystemAppEng/SaaSi/deployer/pkg/utils"
 	"github.com/google/uuid"
 )
 
@@ -21,6 +21,8 @@ const (
 	CONFIGMAPS_DIR = "params"
 	SECRETS_DIR    = "secrets"
 
+	PARAM_FILE_EXT = ".env"
+
 	EMPTY_PLACEHOLDER     = "__DEFAULT__"
 	MANDATORY_PLACEHOLDER = "__MANDATORY__"
 
@@ -33,11 +35,12 @@ var (
 )
 
 type ApplicationPkg struct {
-	Uuid         uuid.UUID
-	AppConfig    config.Application
-	AppDir       string
-	KustomizeDir string
-	DeloymentDir string
+	Uuid                 uuid.UUID
+	AppConfig            config.Application
+	AppDir               string
+	KustomizeDir         string
+	DeloymentDir         string
+	UnsetMandatoryParams map[string][]string
 }
 
 func NewApplicationPkg(appConfig config.Application) *ApplicationPkg {
@@ -63,6 +66,9 @@ func NewApplicationPkg(appConfig config.Application) *ApplicationPkg {
 	// deployment directory for deployment packages
 	pkg.DeloymentDir = filepath.Join(pkg.AppDir, DEPLOYMENT_DIR)
 	utils.CreateDir(pkg.DeloymentDir)
+
+	// init UnsetMandatoryParams to empty dict
+	pkg.UnsetMandatoryParams = map[string][]string{}
 
 	// in compliance with application config: generate a kustomize-able artifact, invoke cutomizations and build package
 	pkg.generateApplicationPkg()

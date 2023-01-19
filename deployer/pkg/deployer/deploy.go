@@ -4,8 +4,8 @@ import (
 	"log"
 	"os/exec"
 
-	"github.com/RHEcosystemAppEng/SaaSi/replica-builder/deployer/pkg/packager"
-	"github.com/RHEcosystemAppEng/SaaSi/replica-builder/deployer/pkg/utils"
+	"github.com/RHEcosystemAppEng/SaaSi/deployer/pkg/packager"
+	"github.com/RHEcosystemAppEng/SaaSi/deployer/pkg/utils"
 )
 
 var (

@@ -1,4 +1,4 @@
-module github.com/RHEcosystemAppEng/SaaSi/replica-builder/exporter
+module github.com/RHEcosystemAppEng/SaaSi/exporter
 
 go 1.19
 
