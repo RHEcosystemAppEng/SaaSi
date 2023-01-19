@@ -5,7 +5,7 @@ import (
 	"os"
 
 	config "github.com/RHEcosystemAppEng/SaaSi/exporter/pkg/config"
-	"github.com/RHEcosystemAppEng/SaaSi/exporter/pkg/installer"
+	"github.com/RHEcosystemAppEng/SaaSi/exporter/pkg/export"
 	"github.com/kr/pretty"
 )
 
@@ -14,20 +14,20 @@ func main() {
 		log.Fatal("Expected 1 argument, got ", len(os.Args)-1)
 	}
 
-	appConfig := config.ReadConfig(os.Args[1])
-	pretty.Printf("Exporting application %# v", appConfig)
-	exporterConfig := config.NewInstallerConfigFromApplicationConfig(appConfig)
+	exporterConfig := config.ReadConfig(os.Args[1])
+	pretty.Printf("Exporting application %# v", exporterConfig)
+	context := export.NewContextFromConfig(exporterConfig)
 
-	clusterRolesInspector := installer.NewClusterRolesInspector()
+	clusterRolesInspector := export.NewClusterRolesInspector()
 	clusterRolesInspector.LoadClusterRoles()
 
-	exporter := installer.NewExporterFromConfig(appConfig, exporterConfig)
+	exporter := export.NewExporterFromConfig(&exporterConfig.Exporter.Application, context)
 	exporter.PrepareOutput()
 	exporter.ExportWithCrane()
 
-	parametrizer := installer.NewParametrizerFromConfig(appConfig, exporterConfig)
+	parametrizer := export.NewParametrizerFromConfig(&exporterConfig.Exporter.Application, context)
 	parametrizer.ExposeParameters()
 
-	installer := installer.NewInstallerFromConfig(appConfig, exporterConfig, clusterRolesInspector)
+	installer := export.NewInstallerFromConfig(&exporterConfig.Exporter.Application, context, clusterRolesInspector)
 	installer.BuildKustomizeInstaller()
 }

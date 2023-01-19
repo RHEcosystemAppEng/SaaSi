@@ -1,4 +1,4 @@
-package installer
+package export
 
 import (
 	"log"
@@ -15,10 +15,10 @@ import (
 
 type Exporter struct {
 	appConfig       *config.ApplicationConfig
-	installerConfig *config.InstallerConfig
+	installerConfig *Context
 }
 
-func NewExporterFromConfig(appConfig *config.ApplicationConfig, installerConfig *config.InstallerConfig) *Exporter {
+func NewExporterFromConfig(appConfig *config.ApplicationConfig, installerConfig *Context) *Exporter {
 	exporter := Exporter{appConfig: appConfig, installerConfig: installerConfig}
 
 	return &exporter
@@ -34,7 +34,7 @@ func (e *Exporter) PrepareOutput() {
 		log.Fatalf("Cannot create %v folder: %v", e.installerConfig.AppFolder, err)
 	}
 	log.Printf("Created output folder %s", e.installerConfig.AppFolder)
-	for _, ns := range e.appConfig.Application.Namespaces {
+	for _, ns := range e.appConfig.Namespaces {
 		nsFolder := filepath.Join(e.installerConfig.AppFolder, ns.Name)
 		if err := os.Mkdir(nsFolder, os.ModePerm); err != nil {
 			log.Fatalf("Cannot create %v folder: %v", nsFolder, err)
@@ -44,7 +44,7 @@ func (e *Exporter) PrepareOutput() {
 }
 
 func (e *Exporter) ExportWithCrane() {
-	for _, ns := range e.appConfig.Application.Namespaces {
+	for _, ns := range e.appConfig.Namespaces {
 		nsFolder := filepath.Join(e.installerConfig.AppFolder, ns.Name)
 		log.Printf("Exporting NS %s with crane", nsFolder)
 

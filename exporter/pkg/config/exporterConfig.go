@@ -7,11 +7,23 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-type ApplicationConfig struct {
-	Application Application `yaml:"application"`
+type Config struct {
+	Exporter ExporterConfig `yaml:"exporter"`
 }
 
-type Application struct {
+type ExporterConfig struct {
+	Cluster     ClusterConfig     `yaml:"cluster"`
+	Application ApplicationConfig `yaml:"application"`
+}
+
+type ClusterConfig struct {
+	ClusterId string `yaml:"clusterId"`
+	Server    string `yaml:"server"`
+	User      string `yaml:"user"`
+	Token     string `yaml:"token"`
+}
+
+type ApplicationConfig struct {
 	Name       string            `yaml:"name"`
 	Namespaces []SourceNamespace `yaml:"namespaces"`
 }
@@ -26,13 +38,13 @@ type MandatoryParam struct {
 	Params    []string `yaml:"params"`
 }
 
-func ReadConfig(configFile string) *ApplicationConfig {
+func ReadConfig(configFile string) *Config {
 	yfile, err := ioutil.ReadFile(configFile)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	config := ApplicationConfig{}
+	config := Config{}
 	err = yaml.Unmarshal(yfile, &config)
 	if err != nil {
 		log.Fatal(err)
@@ -40,8 +52,8 @@ func ReadConfig(configFile string) *ApplicationConfig {
 	return &config
 }
 
-func (a *ApplicationConfig) MandatoryParamsByNSAndConfigMap(namespace string, configMap string) []string {
-	for _, ns := range a.Application.Namespaces {
+func (c *ApplicationConfig) MandatoryParamsByNSAndConfigMap(namespace string, configMap string) []string {
+	for _, ns := range c.Namespaces {
 		if ns.Name == namespace {
 			for _, params := range ns.MandatoryParams {
 				if params.ConfigMap == configMap {

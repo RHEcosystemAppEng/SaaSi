@@ -1,4 +1,4 @@
-package installer
+package export
 
 import (
 	"fmt"
@@ -19,7 +19,7 @@ import (
 
 type Installer struct {
 	appConfig             *config.ApplicationConfig
-	installerConfig       *config.InstallerConfig
+	installerConfig       *Context
 	clusterRolesInspector *ClusterRolesInspector
 
 	sccToBeReplacedByNS map[string][]SccForSA
@@ -30,7 +30,7 @@ type SccForSA struct {
 	sccName            string
 }
 
-func NewInstallerFromConfig(appConfig *config.ApplicationConfig, installerConfig *config.InstallerConfig, clusterRolesInspector *ClusterRolesInspector) *Installer {
+func NewInstallerFromConfig(appConfig *config.ApplicationConfig, installerConfig *Context, clusterRolesInspector *ClusterRolesInspector) *Installer {
 	installer := Installer{appConfig: appConfig, installerConfig: installerConfig, clusterRolesInspector: clusterRolesInspector}
 
 	installer.sccToBeReplacedByNS = make(map[string][]SccForSA)
@@ -38,13 +38,13 @@ func NewInstallerFromConfig(appConfig *config.ApplicationConfig, installerConfig
 }
 
 func (i *Installer) BuildKustomizeInstaller() {
-	for _, ns := range i.appConfig.Application.Namespaces {
+	for _, ns := range i.appConfig.Namespaces {
 		log.Printf("Creating kustomize installer for NS %s", ns.Name)
 
 		outputFolder := i.installerConfig.OutputFolderForNS(ns.Name)
 		kustomizeFolder := i.installerConfig.BaseKustomizeFolderForNS(ns.Name)
 
-		kustomization := filepath.Join(kustomizeFolder, config.KustomizationFile)
+		kustomization := filepath.Join(kustomizeFolder, KustomizationFile)
 		os.Create(kustomization)
 		AppendToFile(kustomization, "resources:")
 		filepath.WalkDir(outputFolder, func(path string, d fs.DirEntry, e error) error {
@@ -77,13 +77,13 @@ func (i *Installer) BuildKustomizeInstaller() {
 }
 
 func (i *Installer) createKustomizeTemplate() {
-	for _, ns := range i.appConfig.Application.Namespaces {
+	for _, ns := range i.appConfig.Namespaces {
 		log.Printf("Creating kustomize template for NS %s", ns.Name)
 		templateFolder := i.installerConfig.KustomizeTemplateFolderForNS(ns.Name)
 
-		paramsFolder := filepath.Join(templateFolder, config.ParamsFolder)
+		paramsFolder := filepath.Join(templateFolder, ParamsFolder)
 		os.Rename(i.installerConfig.TmpParamsFolderForNS(ns.Name), paramsFolder)
-		secretsFolder := filepath.Join(templateFolder, config.SecretsFolder)
+		secretsFolder := filepath.Join(templateFolder, SecretsFolder)
 		os.Rename(i.installerConfig.TmpSecretsFolderForNS(ns.Name), secretsFolder)
 
 		templateKustomization := i.installerConfig.KustomizationFileFrom(templateFolder)
@@ -110,7 +110,7 @@ func (i *Installer) createKustomizeTemplate() {
 						"  behavior: merge\n" +
 						"  envs:\n" +
 						"  - %s/%s"
-					AppendToFile(templateKustomization, text, configMap, config.ParamsFolder, d.Name())
+					AppendToFile(templateKustomization, text, configMap, ParamsFolder, d.Name())
 				}
 				return nil
 			})
@@ -130,7 +130,7 @@ func (i *Installer) createKustomizeTemplate() {
 							"  behavior: create\n" +
 							"  envs:\n" +
 							"  - %s/%s"
-						AppendToFile(templateKustomization, text, secret, config.SecretsFolder, d.Name())
+						AppendToFile(templateKustomization, text, secret, SecretsFolder, d.Name())
 					}
 					return nil
 				})

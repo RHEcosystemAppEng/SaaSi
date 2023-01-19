@@ -1,4 +1,4 @@
-package installer
+package export
 
 import (
 	"fmt"
@@ -21,16 +21,16 @@ import (
 
 type Parametrizer struct {
 	appConfig       *config.ApplicationConfig
-	installerConfig *config.InstallerConfig
+	installerConfig *Context
 }
 
-func NewParametrizerFromConfig(appConfig *config.ApplicationConfig, installerConfig *config.InstallerConfig) *Parametrizer {
+func NewParametrizerFromConfig(appConfig *config.ApplicationConfig, installerConfig *Context) *Parametrizer {
 	parametrizer := Parametrizer{appConfig: appConfig, installerConfig: installerConfig}
 	return &parametrizer
 }
 
 func (p *Parametrizer) ExposeParameters() {
-	for _, ns := range p.appConfig.Application.Namespaces {
+	for _, ns := range p.appConfig.Namespaces {
 		log.Printf("Exposing parameters for NS %s", ns.Name)
 		outputFolder := p.installerConfig.OutputFolderForNS(ns.Name)
 		var yamlFiles []string
@@ -110,9 +110,9 @@ func (p *Parametrizer) handleConfigMap(configMapFile string, configMap *v1.Confi
 	os.Create(templateFile)
 	for key := range configMap.Data {
 		if slices.Contains(mandatoryParams, key) {
-			AppendToFile(templateFile, fmt.Sprintf("%s=%s\n", key, config.MandatoryValue))
+			AppendToFile(templateFile, fmt.Sprintf("%s=%s\n", key, MandatoryValue))
 		} else {
-			AppendToFile(templateFile, fmt.Sprintf("#%s=%s\n", key, config.NoValue))
+			AppendToFile(templateFile, fmt.Sprintf("#%s=%s\n", key, NoValue))
 		}
 
 	}
@@ -140,7 +140,7 @@ func (p *Parametrizer) handleSecret(secretFile string, secret *v1.Secret) {
 		log.Printf("Creating secret configuration template %s", secretsFile)
 
 		for key, _ := range secret.Data {
-			AppendToFile(secretsFile, fmt.Sprintf("%s=%s\n", key, config.MandatoryValue))
+			AppendToFile(secretsFile, fmt.Sprintf("%s=%s\n", key, MandatoryValue))
 		}
 	}
 	os.Rename(secretFile, BackupFile(secretFile))
