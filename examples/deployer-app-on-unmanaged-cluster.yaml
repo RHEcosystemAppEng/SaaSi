@@ -1,10 +1,11 @@
 deployer:
   cluster:
+    # Must be unique
+    clusterId: DEPLOYED_CLUSTER_ID
     server: API-SERVER-URL
     user: USERNAME
     # Must be valid at the moment we deploy the application
     token: TOKEN
-    userName: CUSTOM_CLUSTER_NAME
   application:
     name: APP
     namespaceMappingFormat: "%s-prod"

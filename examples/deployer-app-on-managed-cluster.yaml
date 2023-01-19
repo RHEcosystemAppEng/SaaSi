@@ -1,6 +1,7 @@
 deployer:
   cluster:
-    userName: CUSTOM_CLUSTER_NAME
+    # Must be unique
+    clusterId: DEPLOYED_CLUSTER_ID
   application:
     name: APP
     namespaceMappingFormat: "%s-prod"
