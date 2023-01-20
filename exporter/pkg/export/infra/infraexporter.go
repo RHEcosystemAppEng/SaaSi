@@ -6,14 +6,14 @@ import (
 )
 
 type InfraExporter struct {
-	clusterConfig *config.ClusterConfig
+	infraContext *InfraContext
 }
 
-func NewInfraExporterFromConfig(config *config.Config) *InfraExporter {
-	exporter := InfraExporter{clusterConfig: &config.Exporter.Cluster}
+func NewInfraExporterFromConfig(config *config.Config, connectionStatus *connect.ConnectionStatus) *InfraExporter {
+	exporter := InfraExporter{infraContext: NewInfraContextFromConfig(config, connectionStatus)}
 
 	return &exporter
 }
 
-func (i *InfraExporter) Export(connectionStatus *connect.ConnectionStatus) {
+func (i *InfraExporter) Export() {
 }
