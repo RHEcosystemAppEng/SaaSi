@@ -5,6 +5,7 @@ import (
 
 	"github.com/RHEcosystemAppEng/SaaSi/exporter/pkg/config"
 	"github.com/RHEcosystemAppEng/SaaSi/exporter/pkg/connect"
+	"github.com/RHEcosystemAppEng/SaaSi/exporter/pkg/export/utils"
 )
 
 type InfraExporter struct {
@@ -19,4 +20,6 @@ func NewInfraExporterFromConfig(config *config.Config, connectionStatus *connect
 
 func (e *InfraExporter) Export() {
 	log.Printf("Running infra exporter with context: %v", e.infraContext)
+	utils.RunCommandAndLog(e.infraContext.ExportScript, e.infraContext.KubeConfigPath(),
+		e.infraContext.clusterConfig.ClusterId, "/tmp") // TODO
 }

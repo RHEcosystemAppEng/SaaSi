@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"bufio"
 	"bytes"
 	"fmt"
 	"io"
@@ -19,20 +20,25 @@ func RunCommand(name string, options ...string) {
 		log.Fatal(err)
 	}
 }
-func RunCommandAndLogStderr(name string, options ...string) {
+func RunCommandAndLog(name string, options ...string) {
 	cmd := exec.Command(name, options...)
 	log.Printf("Running %s", cmd)
 	stderr, err := cmd.StderrPipe()
 	if err != nil {
 		log.Fatal(err)
 	}
+	stdout, err := cmd.StdoutPipe()
+	if err != nil {
+		log.Fatal(err)
+	}
 	if err := cmd.Start(); err != nil {
 		log.Fatal(err)
 	}
-	slurp, _ := io.ReadAll(stderr)
-	log.Printf("%s\n", slurp)
-	if err := cmd.Wait(); err != nil {
-		log.Fatal(err)
+
+	multi := io.MultiReader(stdout, stderr)
+	in := bufio.NewScanner(multi)
+	for in.Scan() {
+		log.Println(in.Text())
 	}
 }
 
