@@ -8,6 +8,7 @@ import (
 
 	"github.com/RHEcosystemAppEng/SaaSi/exporter/pkg/config"
 	"github.com/RHEcosystemAppEng/SaaSi/exporter/pkg/connect"
+	"k8s.io/client-go/rest"
 )
 
 var ParamsFolder = "params"
@@ -17,41 +18,51 @@ var MandatoryValue = "__MANDATORY__"
 var KustomizationFile = "kustomization.yaml"
 
 type AppContext struct {
-	OutputFolder     string
-	AppFolder        string
-	ConnectionStatus *connect.ConnectionStatus
+	AppConfig        *config.ApplicationConfig
+	connectionStatus *connect.ConnectionStatus
+
+	OutputFolder string
+	AppFolder    string
 }
 
-func NewContextFromConfig(appConfig *config.ApplicationConfig, connectionStatus *connect.ConnectionStatus) *AppContext {
-	context := AppContext{ConnectionStatus: connectionStatus}
+func NewAppContextFromConfig(config *config.Config, connectionStatus *connect.ConnectionStatus) *AppContext {
+	context := AppContext{connectionStatus: connectionStatus, AppConfig: &config.Exporter.Application}
 
 	pwd, _ := os.Getwd()
 	log.Printf("Running from %v", pwd)
 	context.OutputFolder = pwd + "/output"
 	// TODO
-	context.AppFolder = filepath.Join(context.OutputFolder, appConfig.Name)
+	context.AppFolder = filepath.Join(context.OutputFolder, context.AppConfig.Name)
 
 	return &context
 }
 
-func (i *AppContext) ExportFolderForNS(namespace string) string {
-	return filepath.Join(i.AppFolder, namespace, "export")
+func (c *AppContext) KubeConfig() *rest.Config {
+	return c.connectionStatus.KubeConfig
 }
 
-func (i *AppContext) TransformFolderForNS(namespace string) string {
-	return filepath.Join(i.AppFolder, namespace, "transform")
+func (c *AppContext) KubeConfigPath() string {
+	return c.connectionStatus.KubeConfigPath
 }
 
-func (i *AppContext) OutputFolderForNS(namespace string) string {
-	return filepath.Join(i.AppFolder, namespace, "output")
+func (c *AppContext) ExportFolderForNS(namespace string) string {
+	return filepath.Join(c.AppFolder, namespace, "export")
 }
 
-func (i *AppContext) lookupOrCreateFolder(path ...string) string {
+func (c *AppContext) TransformFolderForNS(namespace string) string {
+	return filepath.Join(c.AppFolder, namespace, "transform")
+}
+
+func (c *AppContext) OutputFolderForNS(namespace string) string {
+	return filepath.Join(c.AppFolder, namespace, "output")
+}
+
+func (c *AppContext) lookupOrCreateFolder(path ...string) string {
 	fullPath := ""
-	if strings.HasPrefix(path[0], i.AppFolder) {
+	if strings.HasPrefix(path[0], c.AppFolder) {
 		fullPath = filepath.Join(path...)
 	} else {
-		fullPath = filepath.Join(append([]string{i.AppFolder}, path...)...)
+		fullPath = filepath.Join(append([]string{c.AppFolder}, path...)...)
 	}
 	if _, err := os.Stat(fullPath); os.IsNotExist(err) {
 		if err := os.MkdirAll(fullPath, os.ModePerm); err != nil {
@@ -61,42 +72,42 @@ func (i *AppContext) lookupOrCreateFolder(path ...string) string {
 	return fullPath
 }
 
-func (i *AppContext) TmpParamsFolderForNS(namespace string) string {
-	return i.lookupOrCreateFolder(namespace, ParamsFolder)
+func (c *AppContext) TmpParamsFolderForNS(namespace string) string {
+	return c.lookupOrCreateFolder(namespace, ParamsFolder)
 }
 
-func (i *AppContext) TmpSecretsFolderForNS(namespace string) string {
-	return i.lookupOrCreateFolder(namespace, SecretsFolder)
+func (c *AppContext) TmpSecretsFolderForNS(namespace string) string {
+	return c.lookupOrCreateFolder(namespace, SecretsFolder)
 }
 
-func (i *AppContext) InstallerFolder() string {
-	return i.lookupOrCreateFolder("installer")
+func (c *AppContext) InstallerFolder() string {
+	return c.lookupOrCreateFolder("installer")
 }
 
-func (i *AppContext) kustomizeFolderForNS(namespace string) string {
-	return i.lookupOrCreateFolder(i.InstallerFolder(), "kustomize", namespace)
+func (c *AppContext) kustomizeFolderForNS(namespace string) string {
+	return c.lookupOrCreateFolder(c.InstallerFolder(), "kustomize", namespace)
 }
 
-func (i *AppContext) KustomizationFileFrom(folder string) string {
+func (c *AppContext) KustomizationFileFrom(folder string) string {
 	return filepath.Join(folder, KustomizationFile)
 }
 
-func (i *AppContext) BaseKustomizeFolderForNS(namespace string) string {
-	return i.lookupOrCreateFolder(i.kustomizeFolderForNS(namespace), "base")
+func (c *AppContext) BaseKustomizeFolderForNS(namespace string) string {
+	return c.lookupOrCreateFolder(c.kustomizeFolderForNS(namespace), "base")
 }
 
-func (i *AppContext) KustomizeTemplateFolderForNS(namespace string) string {
-	return i.lookupOrCreateFolder(i.kustomizeFolderForNS(namespace), "template")
+func (c *AppContext) KustomizeTemplateFolderForNS(namespace string) string {
+	return c.lookupOrCreateFolder(c.kustomizeFolderForNS(namespace), "template")
 }
 
-func (i *AppContext) KustomizeParamsFolderForNS(namespace string) string {
-	return i.lookupOrCreateFolder(i.BaseKustomizeFolderForNS(namespace), ParamsFolder)
+func (c *AppContext) KustomizeParamsFolderForNS(namespace string) string {
+	return c.lookupOrCreateFolder(c.BaseKustomizeFolderForNS(namespace), ParamsFolder)
 }
 
-func (i *AppContext) KustomizeTemplateParamsFolderForNS(namespace string) string {
-	return i.lookupOrCreateFolder(i.KustomizeTemplateFolderForNS(namespace), ParamsFolder)
+func (c *AppContext) KustomizeTemplateParamsFolderForNS(namespace string) string {
+	return c.lookupOrCreateFolder(c.KustomizeTemplateFolderForNS(namespace), ParamsFolder)
 }
 
-func (i *AppContext) KustomizeSecretsFolderForNS(namespace string) string {
-	return i.lookupOrCreateFolder(i.KustomizeTemplateFolderForNS(namespace), SecretsFolder)
+func (c *AppContext) KustomizeSecretsFolderForNS(namespace string) string {
+	return c.lookupOrCreateFolder(c.KustomizeTemplateFolderForNS(namespace), SecretsFolder)
 }

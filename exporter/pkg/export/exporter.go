@@ -17,10 +17,6 @@ type Exporter struct {
 
 func NewExporterFromConfig(config *config.Config) *Exporter {
 	exporter := Exporter{config: config}
-
-	exporter.infraExporter = infra.NewInfraExporterFromConfig(config)
-	exporter.appExporter = app.NewAppExporterFromConfig(config)
-
 	return &exporter
 }
 
@@ -30,6 +26,9 @@ func (e *Exporter) Export() {
 		log.Fatalf("Cannot connect to given cluster: %s", connectionStatus.Error)
 	}
 
-	e.infraExporter.Export(connectionStatus)
-	e.appExporter.Export(connectionStatus)
+	e.infraExporter = infra.NewInfraExporterFromConfig(e.config, connectionStatus)
+	e.appExporter = app.NewAppExporterFromConfig(e.config, connectionStatus)
+
+	e.infraExporter.Export()
+	e.appExporter.Export()
 }

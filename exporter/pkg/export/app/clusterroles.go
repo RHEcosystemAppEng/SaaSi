@@ -4,7 +4,6 @@ import (
 	"log"
 	"strings"
 
-	"github.com/RHEcosystemAppEng/SaaSi/exporter/pkg/connect"
 	"github.com/RHEcosystemAppEng/SaaSi/exporter/pkg/export/utils"
 	authv1T "github.com/openshift/api/authorization/v1"
 	secuv1T "github.com/openshift/api/security/v1"
@@ -15,25 +14,25 @@ import (
 )
 
 type ClusterRolesInspector struct {
-	connectionStatus    *connect.ConnectionStatus
+	appContext          *AppContext
 	authClient          *authv1.AuthorizationV1Client
 	secuClient          *secuv1.SecurityV1Client
 	clusterRoleBindings *authv1T.ClusterRoleBindingList
 	sccs                *secuv1T.SecurityContextConstraintsList
 }
 
-func NewClusterRolesInspector(connectionStatus *connect.ConnectionStatus) *ClusterRolesInspector {
-	return &ClusterRolesInspector{connectionStatus: connectionStatus}
+func NewClusterRolesInspector(appContext *AppContext) *ClusterRolesInspector {
+	return &ClusterRolesInspector{appContext: appContext}
 }
 
 func (c *ClusterRolesInspector) LoadClusterRoles() {
 	var err error
-	c.authClient, err = authv1.NewForConfig(c.connectionStatus.KubeConfig)
+	c.authClient, err = authv1.NewForConfig(c.appContext.KubeConfig())
 	if err != nil {
 		log.Fatalf("Cannot create auth client: %s", err)
 	}
 
-	c.secuClient, err = secuv1.NewForConfig(c.connectionStatus.KubeConfig)
+	c.secuClient, err = secuv1.NewForConfig(c.appContext.KubeConfig())
 	if err != nil {
 		log.Fatalf("Cannot create security client: %s", err)
 	}

@@ -15,29 +15,26 @@ import (
 )
 
 type AppExporter struct {
-	appConfig  *config.ApplicationConfig
 	appContext *AppContext
 }
 
-func NewAppExporterFromConfig(config *config.Config) *AppExporter {
-	exporter := AppExporter{appConfig: &config.Exporter.Application}
+func NewAppExporterFromConfig(config *config.Config, connectionStatus *connect.ConnectionStatus) *AppExporter {
+	exporter := AppExporter{appContext: NewAppContextFromConfig(config, connectionStatus)}
 
 	return &exporter
 }
 
-func (e *AppExporter) Export(connectionStatus *connect.ConnectionStatus) {
-	e.appContext = NewContextFromConfig(e.appConfig, connectionStatus)
-
-	clusterRolesInspector := NewClusterRolesInspector(connectionStatus)
+func (e *AppExporter) Export() {
+	clusterRolesInspector := NewClusterRolesInspector(e.appContext)
 	clusterRolesInspector.LoadClusterRoles()
 
 	e.PrepareOutput()
 	e.ExportWithCrane()
 
-	parametrizer := NewParametrizerFromConfig(e.appConfig, e.appContext)
+	parametrizer := NewParametrizerFromConfig(e.appContext)
 	parametrizer.ExposeParameters()
 
-	installer := NewInstallerFromConfig(e.appConfig, e.appContext, clusterRolesInspector)
+	installer := NewInstallerFromConfig(e.appContext, clusterRolesInspector)
 	installer.BuildKustomizeInstaller()
 }
 
@@ -51,7 +48,7 @@ func (e *AppExporter) PrepareOutput() {
 		log.Fatalf("Cannot create %v folder: %v", e.appContext.AppFolder, err)
 	}
 	log.Printf("Created output folder %s", e.appContext.AppFolder)
-	for _, ns := range e.appConfig.Namespaces {
+	for _, ns := range e.appContext.AppConfig.Namespaces {
 		nsFolder := filepath.Join(e.appContext.AppFolder, ns.Name)
 		if err := os.Mkdir(nsFolder, os.ModePerm); err != nil {
 			log.Fatalf("Cannot create %v folder: %v", nsFolder, err)
@@ -61,7 +58,7 @@ func (e *AppExporter) PrepareOutput() {
 }
 
 func (e *AppExporter) ExportWithCrane() {
-	for _, ns := range e.appConfig.Namespaces {
+	for _, ns := range e.appContext.AppConfig.Namespaces {
 		nsFolder := filepath.Join(e.appContext.AppFolder, ns.Name)
 		log.Printf("Exporting NS %s with crane", nsFolder)
 
@@ -69,13 +66,13 @@ func (e *AppExporter) ExportWithCrane() {
 		transformFolder := e.appContext.TransformFolderForNS(ns.Name)
 		outputFolder := e.appContext.OutputFolderForNS(ns.Name)
 
-		doExport(e.appContext.ConnectionStatus, ns.Name, exportFolder)
+		doExport(e.appContext.KubeConfigPath(), ns.Name, exportFolder)
 		doTransform(exportFolder, transformFolder)
 		doApply(exportFolder, transformFolder, outputFolder)
 	}
 }
 
-func doExport(connectionStatus *connect.ConnectionStatus, namespace string, exportFolder string) {
+func doExport(kubeConfigPath string, namespace string, exportFolder string) {
 	exportCmd := export.NewExportCommand(genericclioptions.IOStreams{
 		In:     strings.NewReader(""),
 		Out:    os.Stdout,
@@ -87,7 +84,7 @@ func doExport(connectionStatus *connect.ConnectionStatus, namespace string, expo
 	exportDir := exportCmd.Flags().Lookup("export-dir")
 	exportDir.Value.Set(exportFolder)
 	kubeconfig := exportCmd.Flags().Lookup("kubeconfig")
-	kubeconfig.Value.Set(connectionStatus.KubeConfigPath)
+	kubeconfig.Value.Set(kubeConfigPath)
 	exportCmd.SetArgs([]string{})
 
 	_, err := exportCmd.ExecuteC()
