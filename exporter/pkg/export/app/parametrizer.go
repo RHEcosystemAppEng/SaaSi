@@ -1,4 +1,4 @@
-package export
+package app
 
 import (
 	"fmt"
@@ -12,6 +12,7 @@ import (
 	api "github.com/openshift/api"
 
 	"github.com/RHEcosystemAppEng/SaaSi/exporter/pkg/config"
+	"github.com/RHEcosystemAppEng/SaaSi/exporter/pkg/export/utils"
 	"golang.org/x/exp/slices"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -21,10 +22,10 @@ import (
 
 type Parametrizer struct {
 	appConfig       *config.ApplicationConfig
-	installerConfig *Context
+	installerConfig *AppContext
 }
 
-func NewParametrizerFromConfig(appConfig *config.ApplicationConfig, installerConfig *Context) *Parametrizer {
+func NewParametrizerFromConfig(appConfig *config.ApplicationConfig, installerConfig *AppContext) *Parametrizer {
 	parametrizer := Parametrizer{appConfig: appConfig, installerConfig: installerConfig}
 	return &parametrizer
 }
@@ -86,7 +87,7 @@ func (*Parametrizer) resetNamespace(obj runtime.Object, yamlFile string) {
 		log.Printf("Resetting namespace %s at %s/%s", namespace, kind, name)
 		ns.SetString("")
 
-		os.Rename(yamlFile, BackupFile(yamlFile))
+		os.Rename(yamlFile, utils.BackupFile(yamlFile))
 		newFile, err := os.Create(yamlFile)
 		if err != nil {
 			log.Fatal(err)
@@ -110,9 +111,9 @@ func (p *Parametrizer) handleConfigMap(configMapFile string, configMap *v1.Confi
 	os.Create(templateFile)
 	for key := range configMap.Data {
 		if slices.Contains(mandatoryParams, key) {
-			AppendToFile(templateFile, fmt.Sprintf("%s=%s\n", key, MandatoryValue))
+			utils.AppendToFile(templateFile, fmt.Sprintf("%s=%s\n", key, MandatoryValue))
 		} else {
-			AppendToFile(templateFile, fmt.Sprintf("#%s=%s\n", key, NoValue))
+			utils.AppendToFile(templateFile, fmt.Sprintf("#%s=%s\n", key, NoValue))
 		}
 
 	}
@@ -140,8 +141,8 @@ func (p *Parametrizer) handleSecret(secretFile string, secret *v1.Secret) {
 		log.Printf("Creating secret configuration template %s", secretsFile)
 
 		for key, _ := range secret.Data {
-			AppendToFile(secretsFile, fmt.Sprintf("%s=%s\n", key, MandatoryValue))
+			utils.AppendToFile(secretsFile, fmt.Sprintf("%s=%s\n", key, MandatoryValue))
 		}
 	}
-	os.Rename(secretFile, BackupFile(secretFile))
+	os.Rename(secretFile, utils.BackupFile(secretFile))
 }

@@ -1,4 +1,4 @@
-package export
+package app
 
 import (
 	"fmt"
@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/RHEcosystemAppEng/SaaSi/exporter/pkg/config"
+	"github.com/RHEcosystemAppEng/SaaSi/exporter/pkg/export/utils"
 	v1 "k8s.io/api/core/v1"
 	rbacV1 "k8s.io/api/rbac/v1"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -19,7 +20,7 @@ import (
 
 type Installer struct {
 	appConfig             *config.ApplicationConfig
-	installerConfig       *Context
+	installerConfig       *AppContext
 	clusterRolesInspector *ClusterRolesInspector
 
 	sccToBeReplacedByNS map[string][]SccForSA
@@ -30,7 +31,7 @@ type SccForSA struct {
 	sccName            string
 }
 
-func NewInstallerFromConfig(appConfig *config.ApplicationConfig, installerConfig *Context, clusterRolesInspector *ClusterRolesInspector) *Installer {
+func NewInstallerFromConfig(appConfig *config.ApplicationConfig, installerConfig *AppContext, clusterRolesInspector *ClusterRolesInspector) *Installer {
 	installer := Installer{appConfig: appConfig, installerConfig: installerConfig, clusterRolesInspector: clusterRolesInspector}
 
 	installer.sccToBeReplacedByNS = make(map[string][]SccForSA)
@@ -46,7 +47,7 @@ func (i *Installer) BuildKustomizeInstaller() {
 
 		kustomization := filepath.Join(kustomizeFolder, KustomizationFile)
 		os.Create(kustomization)
-		AppendToFile(kustomization, "resources:")
+		utils.AppendToFile(kustomization, "resources:")
 		filepath.WalkDir(outputFolder, func(path string, d fs.DirEntry, e error) error {
 			if e != nil {
 				return e
@@ -67,7 +68,7 @@ func (i *Installer) BuildKustomizeInstaller() {
 
 				// log.Printf("Moving %s to %s", d.Name(), kustomizeFolder)
 				os.Rename(path, filepath.Join(kustomizeFolder, d.Name()))
-				AppendToFile(kustomization, fmt.Sprintf("\n  - %s", d.Name()))
+				utils.AppendToFile(kustomization, fmt.Sprintf("\n  - %s", d.Name()))
 			}
 			return nil
 		})
@@ -90,12 +91,12 @@ func (i *Installer) createKustomizeTemplate() {
 		os.Create(templateKustomization)
 		text := "resources:\n" +
 			"  - ../base\n"
-		AppendToFile(templateKustomization, text)
+		utils.AppendToFile(templateKustomization, text)
 
 		text = "generatorOptions:\n" +
 			"  disableNameSuffixHash: true\n" +
 			"configMapGenerator:"
-		AppendToFile(templateKustomization, text)
+		utils.AppendToFile(templateKustomization, text)
 		err := filepath.WalkDir(paramsFolder,
 			func(path string, d fs.DirEntry, err error) error {
 				if err != nil {
@@ -110,13 +111,13 @@ func (i *Installer) createKustomizeTemplate() {
 						"  behavior: merge\n" +
 						"  envs:\n" +
 						"  - %s/%s"
-					AppendToFile(templateKustomization, text, configMap, ParamsFolder, d.Name())
+					utils.AppendToFile(templateKustomization, text, configMap, ParamsFolder, d.Name())
 				}
 				return nil
 			})
 		if err == nil {
 			text := "\nsecretGenerator:"
-			AppendToFile(templateKustomization, text)
+			utils.AppendToFile(templateKustomization, text)
 			err = filepath.WalkDir(secretsFolder,
 				func(path string, d fs.DirEntry, err error) error {
 					if err != nil {
@@ -130,7 +131,7 @@ func (i *Installer) createKustomizeTemplate() {
 							"  behavior: create\n" +
 							"  envs:\n" +
 							"  - %s/%s"
-						AppendToFile(templateKustomization, text, secret, SecretsFolder, d.Name())
+						utils.AppendToFile(templateKustomization, text, secret, SecretsFolder, d.Name())
 					}
 					return nil
 				})
@@ -141,7 +142,7 @@ func (i *Installer) createKustomizeTemplate() {
 
 		if len(i.sccToBeReplacedByNS[ns.Name]) > 0 {
 			text := "\nreplacements:"
-			AppendToFile(templateKustomization, text)
+			utils.AppendToFile(templateKustomization, text)
 
 			for _, sccForSA := range i.sccToBeReplacedByNS[ns.Name] {
 				text = "\n" +
@@ -158,7 +159,7 @@ func (i *Installer) createKustomizeTemplate() {
 					"    options:\n" +
 					"      delimiter: \":\"\n" +
 					"      index: 2\n"
-				AppendToFile(templateKustomization, text, sccForSA.serviceAccountName, sccForSA.sccName)
+				utils.AppendToFile(templateKustomization, text, sccForSA.serviceAccountName, sccForSA.sccName)
 			}
 		}
 	}
@@ -213,11 +214,11 @@ func (i *Installer) handleServiceAccount(kustomization string, namespace string,
 			log.Fatal(err)
 		}
 
-		AppendToFile(kustomization, fmt.Sprintf("\n  - %s", yamlFile))
+		utils.AppendToFile(kustomization, fmt.Sprintf("\n  - %s", yamlFile))
 	}
 
 	sccs := i.clusterRolesInspector.SecurityContextConstraintsForSA(namespace, serviceAccount.Name)
-	systemName := SystemNameForSA(namespace, serviceAccount.Name)
+	systemName := utils.SystemNameForSA(namespace, serviceAccount.Name)
 	for _, scc := range sccs {
 		// Temporary solution
 		// Create a copy of the original SCC, rename it top match the SA and connect to this SA only
@@ -243,7 +244,7 @@ func (i *Installer) handleServiceAccount(kustomization string, namespace string,
 			log.Fatal(err)
 		}
 
-		AppendToFile(kustomization, fmt.Sprintf("\n  - %s", yamlFile))
+		utils.AppendToFile(kustomization, fmt.Sprintf("\n  - %s", yamlFile))
 
 		sccForSA := SccForSA{serviceAccountName: serviceAccount.Name, sccName: sccCopy.Name}
 		if sccsForSA, ok := i.sccToBeReplacedByNS[namespace]; ok {
