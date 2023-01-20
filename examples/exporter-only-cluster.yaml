@@ -3,7 +3,6 @@ exporter:
     # Must be unique
     clusterId: UNIQUE-ID
     server: API-SERVER-URL
-    user: USERNAME
     # Must be valid at the moment we export the configuration
     token: TOKEN
   application: {}

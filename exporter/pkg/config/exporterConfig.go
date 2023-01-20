@@ -22,7 +22,6 @@ type ExporterConfig struct {
 type ClusterConfig struct {
 	ClusterId string `yaml:"clusterId"`
 	Server    string `yaml:"server"`
-	User      string `yaml:"user"`
 	Token     string `yaml:"token"`
 }
 
