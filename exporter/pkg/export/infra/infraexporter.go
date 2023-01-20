@@ -20,6 +20,6 @@ func NewInfraExporterFromConfig(config *config.Config, connectionStatus *connect
 
 func (e *InfraExporter) Export() {
 	log.Printf("Running infra exporter with context: %v", e.infraContext)
-	utils.RunCommandAndLog(e.infraContext.ExportScript, e.infraContext.KubeConfigPath(),
-		e.infraContext.clusterConfig.ClusterId, "/tmp") // TODO
+	utils.RunCommandAndLog(e.infraContext.ExportScript, "-k", e.infraContext.KubeConfigPath(),
+		"-i", e.infraContext.clusterConfig.ClusterId, "-r", e.infraContext.ClusterFolder)
 }

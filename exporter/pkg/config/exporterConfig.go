@@ -5,13 +5,15 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"path/filepath"
 
 	"gopkg.in/yaml.v2"
 )
 
 type Config struct {
-	Exporter   ExporterConfig `yaml:"exporter"`
-	RootFolder string
+	Exporter               ExporterConfig `yaml:"exporter"`
+	RootInstallationFolder string
+	RootOutputFolder       string
 }
 
 type ExporterConfig struct {
@@ -45,10 +47,16 @@ func ReadConfig() *Config {
 	if err != nil {
 		log.Fatal(err)
 	}
+	defaultOutput := filepath.Join(defaultRoot, "output")
 
 	config := Config{}
 	configFile := flag.String("f", "", "Application configuration file")
-	rootFolder := flag.String("root", defaultRoot, "Root installation folder")
+	var rootFolder string
+	flag.StringVar(&rootFolder, "install-dir", defaultRoot, "Root installation folder")
+	flag.StringVar(&rootFolder, "i", defaultRoot, "Root installation folder (shorthand)")
+	var outputFolder string
+	flag.StringVar(&outputFolder, "output-dir", defaultOutput, "Root output folder")
+	flag.StringVar(&outputFolder, "o", defaultOutput, "Root output folder (shorthand)")
 	flag.Parse()
 
 	yfile, err := ioutil.ReadFile(*configFile)
@@ -61,7 +69,8 @@ func ReadConfig() *Config {
 		log.Fatal(err)
 	}
 
-	config.RootFolder = *rootFolder
+	config.RootInstallationFolder = rootFolder
+	config.RootOutputFolder = outputFolder
 	return &config
 }
 
