@@ -13,9 +13,11 @@ echo "Running for KUBECONFIG=$KUBECONFIG, CLUSTERID=$CLUSTERID, RESULTS_DIR=$RES
 
 ## TODO check args number
 
+export OC="oc --kubeconfig $KUBECONFIG"
+
 PREFIX="cloned_"
 # Extracting API address
-CLUSTER_API=$(oc --kubeconfig $KUBECONFIG cluster-info | \
+CLUSTER_API=$($OC cluster-info | \
 	# removing color characters
   sed -e 's/\x1b\[[0-9;]*m//g' | \
 	# API URL
@@ -24,7 +26,7 @@ CLUSTER_API=$(oc --kubeconfig $KUBECONFIG cluster-info | \
 )
 # Check cluster API connection
 [[ $? -ne 0 ]] && { echo "Not connected to a cluster. Exiting..."; exit; }
-CLUSTER_ID="$(oc --kubeconfig $KUBECONFIG get clusterversion -o jsonpath='{.items[].spec.clusterID}{"\n"}')"
+CLUSTER_ID="$($OC get clusterversion -o jsonpath='{.items[].spec.clusterID}{"\n"}')"
 
 
 ## Init
@@ -41,21 +43,21 @@ echo "Copying cluster with ID: $CLUSTER_ID at $CLUSTER_API"
 echo "Getting Cluster Info..."
 export CLUSTER_NAME=$(echo "$PREFIX$CLUSTER_API" | sed -r 's/https:\/\/api.([0-9a-zA-Z\-]*)\.(.*):6443/\1/')
 export CLUSTER_BASE_DOMAIN=$(echo "$CLUSTER_API" | sed -r 's/https:\/\/api.([0-9a-zA-Z\-]*)\.(.*):6443/\2/')
-export CLUSTER_VERSION=$(oc --kubeconfig $KUBECONFIG get clusterversion -o go-template='{{range .items}}{{.status.desired.version}}{{"\n"}}{{end}}')
+export CLUSTER_VERSION=$($OC get clusterversion -o go-template='{{range .items}}{{.status.desired.version}}{{"\n"}}{{end}}')
 
 
 echo "Getting Infrastructure Info..."
-export WORKER_COUNT=$(oc --kubeconfig $KUBECONFIG get nodes --selector=node-role.kubernetes.io/worker --no-headers | wc -l | sed 's/ //g')
-export CLUSTER_NETWORK=$(oc --kubeconfig $KUBECONFIG get network.config/cluster -o go-template='{{range .spec.clusterNetwork}}{{.cidr}}{{"\n"}}{{end}}')
-export HOST_PREFIX=$(oc --kubeconfig $KUBECONFIG get network.config/cluster -o go-template='{{range .spec.clusterNetwork}}{{.hostPrefix}}{{"\n"}}{{end}}')
-export SERVICE_NETWORK=$(oc --kubeconfig $KUBECONFIG get network.config/cluster -o go-template='{{range .spec.serviceNetwork}}{{.}}{{"\n"}}{{end}}')
-export NETWORK_TYPE=$(oc --kubeconfig $KUBECONFIG get network.config/cluster -o go-template='{{.spec.networkType}}')
+export WORKER_COUNT=$($OC get nodes --selector=node-role.kubernetes.io/worker --no-headers | wc -l | sed 's/ //g')
+export CLUSTER_NETWORK=$($OC get network.config/cluster -o go-template='{{range .spec.clusterNetwork}}{{.cidr}}{{"\n"}}{{end}}')
+export HOST_PREFIX=$($OC get network.config/cluster -o go-template='{{range .spec.clusterNetwork}}{{.hostPrefix}}{{"\n"}}{{end}}')
+export SERVICE_NETWORK=$($OC get network.config/cluster -o go-template='{{range .spec.serviceNetwork}}{{.}}{{"\n"}}{{end}}')
+export NETWORK_TYPE=$($OC get network.config/cluster -o go-template='{{.spec.networkType}}')
 
 
 echo "Getting Registry Info..."
 # Don't need to export it because is a internal var
-_REGISTRY_ROUTE_NAME="$(oc --kubeconfig $KUBECONFIG get routes -n openshift-image-registry -o=jsonpath='{.items[?(@.metadata.annotations.imageregistry\.openshift\.io=="true")].metadata.name}')"
-export REGISTRY_ROUTE_HOSTNAME=$(oc --kubeconfig $KUBECONFIG get routes $_REGISTRY_ROUTE_NAME -n openshift-image-registry -o go-template='{{.spec.host}}' | sed -r "s/(.*).apps..*/\1.$CLUSTER_NAME.$CLUSTER_BASE_DOMAIN/g")
+_REGISTRY_ROUTE_NAME="$($OC get routes -n openshift-image-registry -o=jsonpath='{.items[?(@.metadata.annotations.imageregistry\.openshift\.io=="true")].metadata.name}')"
+export REGISTRY_ROUTE_HOSTNAME=$($OC get routes $_REGISTRY_ROUTE_NAME -n openshift-image-registry -o go-template='{{.spec.host}}' | sed -r "s/(.*).apps..*/\1.$CLUSTER_NAME.$CLUSTER_BASE_DOMAIN/g")
 if [[ "$(echo $REGISTRY_ROUTE_INFO | wc -l)" -ne 0 ]]; then
   export REGISTRY_IS_EXPOSED="true"
 else
@@ -64,9 +66,9 @@ fi
 
 
 echo "Getting Cloud/Bare-Metal Provider Info..."
-export PROV_CLOUD_PROVIDER=$(oc --kubeconfig $KUBECONFIG get Infrastructure cluster -o go-template='{{.status.platform}}')
+export PROV_CLOUD_PROVIDER=$($OC get Infrastructure cluster -o go-template='{{.status.platform}}')
 if [ ! -z $PROV_CLOUD_PROVIDER ]; then
-  export PROV_CLOUD_REGION=$(oc --kubeconfig $KUBECONFIG get Infrastructure cluster -o go-template="{{.status.platformStatus.$(echo $PROV_CLOUD_PROVIDER | tr '[:upper:]' '[:lower:]').region}}")
+  export PROV_CLOUD_REGION=$($OC get Infrastructure cluster -o go-template="{{.status.platformStatus.$(echo $PROV_CLOUD_PROVIDER | tr '[:upper:]' '[:lower:]').region}}")
 fi
 
 echo "Generating Env var file..."
