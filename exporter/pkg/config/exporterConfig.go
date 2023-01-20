@@ -1,14 +1,17 @@
 package config
 
 import (
+	"flag"
 	"io/ioutil"
 	"log"
+	"os"
 
 	"gopkg.in/yaml.v2"
 )
 
 type Config struct {
-	Exporter ExporterConfig `yaml:"exporter"`
+	Exporter   ExporterConfig `yaml:"exporter"`
+	RootFolder string
 }
 
 type ExporterConfig struct {
@@ -38,17 +41,28 @@ type MandatoryParam struct {
 	Params    []string `yaml:"params"`
 }
 
-func ReadConfig(configFile string) *Config {
-	yfile, err := ioutil.ReadFile(configFile)
+func ReadConfig() *Config {
+	defaultRoot, err := os.Getwd()
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	config := Config{}
+	configFile := flag.String("f", "", "Application configuration file")
+	rootFolder := flag.String("root", defaultRoot, "Root installation folder")
+	flag.Parse()
+
+	yfile, err := ioutil.ReadFile(*configFile)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	err = yaml.Unmarshal(yfile, &config)
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	config.RootFolder = *rootFolder
 	return &config
 }
 
