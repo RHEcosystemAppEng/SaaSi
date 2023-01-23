@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	SOURCE_KUSTOMIZE_DIR = "../exporter/output/Infinity/installer/kustomize"
+	SOURCE_KUSTOMIZE_DIR = "../exporter/output/applications/Infinity/kustomize"
 
 	OUTPUT_DIR     = "output"
 	KUSTOMIZE_DIR  = "kustomize"
@@ -97,6 +97,7 @@ func (pkg *ApplicationPkg) generateNsArtifact(ns config.Namespaces) {
 
 	source := filepath.Join(SOURCE_KUSTOMIZE_DIR, ns.Name)
 	// create pkg template at pkg template path
+	log.Printf("cp -r %s %s", source, pkg.KustomizeDir)
 	cmd := exec.Command("cp", "-r", source, pkg.KustomizeDir)
 	if err := cmd.Run(); err != nil {
 		log.Fatalf("Failed to generate kustomize template for namespace: %s, Error: %s", ns.Name, err)
