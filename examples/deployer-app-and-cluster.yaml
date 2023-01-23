@@ -1,8 +1,9 @@
 deployer:
   cluster:
-    fromCluster: NAME_OF_SOURCE_CLUSTER_PACKAGE
+    # Must be match the clusterId of one of the exported cluster
+    fromClusterId: CLUSTER_ID_OF_SOURCE_CLUSTER
     # Must be unique
-    userName: CUSTOM_CLUSTER_NAME
+    clusterId: DEPLOYED_CLUSTER_ID
     # These will be eventually put in a secured store (after MVP1)
     # For MVP1 just store the AWS settings in a fixed vault/secret
     aws:
@@ -19,32 +20,32 @@ deployer:
     name: APP
     namespaceMappingFormat: "%s-prod"
     namespaces:
-      - name: NS1
-        # If missing, the namespaceMappingFormat or the original name are applied
-        target: NEW-NS1
+    - name: NS1
+      # If missing, the namespaceMappingFormat or the original name are applied
+      target: NEW-NS1
+      params:
+      - configMap: MAP-1
         params:
-          - configMap: MAP-1
-              params:
-                - name: PARAM-1
-                  value: VALUE-1
-                - name: "..."
-                  value: "..."
-          - configMap: MAP-2
-              params:
-              - name: PARAM-1
-                value: VALUE-1
-              - name: "..."
-                value: "..."
-        secrets:
-          - secret: SECRET-1
-              params:
-                - name: PARAM-1
-                  value: VALUE-1
-                - name: "..."
-                  value: "..."
-          - configMap: SECRET-2
-              params:
-                - name: PARAM-1
-                  value: VALUE-1
-                - name: "..."
-                  value: "..."
+        - name: PARAM-1
+          value: VALUE-1
+        - name: "..."
+          value: "..."
+      - configMap: MAP-2
+        params:
+        - name: PARAM-1
+          value: VALUE-1
+        - name: "..."
+          value: "..."
+      secrets:
+      - secret: SECRET-1
+        params:
+        - name: PARAM-1
+          value: VALUE-1
+        - name: "..."
+          value: "..."
+      - secret: SECRET-2
+        params:
+        - name: PARAM-1
+          value: VALUE-1
+        - name: "..."
+          value: "..."

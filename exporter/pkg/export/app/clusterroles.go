@@ -1,46 +1,38 @@
-package installer
+package app
 
 import (
 	"log"
-	"os"
-	"path/filepath"
 	"strings"
 
+	"github.com/RHEcosystemAppEng/SaaSi/exporter/pkg/export/utils"
 	authv1T "github.com/openshift/api/authorization/v1"
 	secuv1T "github.com/openshift/api/security/v1"
 	authv1 "github.com/openshift/client-go/authorization/clientset/versioned/typed/authorization/v1"
 	secuv1 "github.com/openshift/client-go/security/clientset/versioned/typed/security/v1"
 	"golang.org/x/net/context"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/rest"
-	"k8s.io/client-go/tools/clientcmd"
 )
 
 type ClusterRolesInspector struct {
-	config              *rest.Config
+	appContext          *AppContext
 	authClient          *authv1.AuthorizationV1Client
 	secuClient          *secuv1.SecurityV1Client
 	clusterRoleBindings *authv1T.ClusterRoleBindingList
 	sccs                *secuv1T.SecurityContextConstraintsList
 }
 
-func NewClusterRolesInspector() *ClusterRolesInspector {
-	return &ClusterRolesInspector{}
+func NewClusterRolesInspector(appContext *AppContext) *ClusterRolesInspector {
+	return &ClusterRolesInspector{appContext: appContext}
 }
 
 func (c *ClusterRolesInspector) LoadClusterRoles() {
-	err := c.connectCluster()
-	if err != nil {
-		log.Fatalf("Cannot connect to default cluster: %s", err)
-	}
-	log.Print("Cluster connected")
-
-	c.authClient, err = authv1.NewForConfig(c.config)
+	var err error
+	c.authClient, err = authv1.NewForConfig(c.appContext.KubeConfig())
 	if err != nil {
 		log.Fatalf("Cannot create auth client: %s", err)
 	}
 
-	c.secuClient, err = secuv1.NewForConfig(c.config)
+	c.secuClient, err = secuv1.NewForConfig(c.appContext.KubeConfig())
 	if err != nil {
 		log.Fatalf("Cannot create security client: %s", err)
 	}
@@ -63,7 +55,7 @@ func (c *ClusterRolesInspector) LoadClusterRoles() {
 }
 
 func (c *ClusterRolesInspector) ClusterRoleBindingsForSA(namespace string, serviceAccount string) []authv1T.ClusterRoleBinding {
-	systemServiceAccount := SystemNameForSA(namespace, serviceAccount)
+	systemServiceAccount := utils.SystemNameForSA(namespace, serviceAccount)
 	var clusterRoleBindings []authv1T.ClusterRoleBinding
 	for _, clusterRoleBinding := range c.clusterRoleBindings.Items {
 		for _, subject := range clusterRoleBinding.Subjects {
@@ -86,7 +78,7 @@ func (c *ClusterRolesInspector) ClusterRoleBindingsForSA(namespace string, servi
 }
 
 func (c *ClusterRolesInspector) SecurityContextConstraintsForSA(namespace string, serviceAccount string) []secuv1T.SecurityContextConstraints {
-	systemServiceAccount := SystemNameForSA(namespace, serviceAccount)
+	systemServiceAccount := utils.SystemNameForSA(namespace, serviceAccount)
 	var sccs []secuv1T.SecurityContextConstraints
 	for _, scc := range c.sccs.Items {
 		for _, user := range scc.Users {
@@ -102,24 +94,4 @@ func (c *ClusterRolesInspector) SecurityContextConstraintsForSA(namespace string
 		log.Printf("%s ", scc.Name)
 	}
 	return sccs
-}
-
-func (c *ClusterRolesInspector) connectCluster() error {
-	kubeconfig := ""
-
-	if home := homeDir(); home != "" {
-		kubeconfig = filepath.Join(home, ".kube", "config")
-	}
-
-	//Load config for Openshift's go-client from kubeconfig file
-	var err error
-	c.config, err = clientcmd.BuildConfigFromFlags("", kubeconfig)
-	return err
-}
-
-func homeDir() string {
-	if h := os.Getenv("HOME"); h != "" {
-		return h
-	}
-	return os.Getenv("USERPROFILE") // windows
 }

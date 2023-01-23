@@ -1,4 +1,4 @@
-package installer
+package app
 
 import (
 	"fmt"
@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/RHEcosystemAppEng/SaaSi/exporter/pkg/config"
+	"github.com/RHEcosystemAppEng/SaaSi/exporter/pkg/export/utils"
 	v1 "k8s.io/api/core/v1"
 	rbacV1 "k8s.io/api/rbac/v1"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -18,8 +18,7 @@ import (
 )
 
 type Installer struct {
-	appConfig             *config.ApplicationConfig
-	installerConfig       *config.InstallerConfig
+	appContext            *AppContext
 	clusterRolesInspector *ClusterRolesInspector
 
 	sccToBeReplacedByNS map[string][]SccForSA
@@ -30,23 +29,23 @@ type SccForSA struct {
 	sccName            string
 }
 
-func NewInstallerFromConfig(appConfig *config.ApplicationConfig, installerConfig *config.InstallerConfig, clusterRolesInspector *ClusterRolesInspector) *Installer {
-	installer := Installer{appConfig: appConfig, installerConfig: installerConfig, clusterRolesInspector: clusterRolesInspector}
+func NewInstallerFromConfig(appContext *AppContext, clusterRolesInspector *ClusterRolesInspector) *Installer {
+	installer := Installer{appContext: appContext, clusterRolesInspector: clusterRolesInspector}
 
 	installer.sccToBeReplacedByNS = make(map[string][]SccForSA)
 	return &installer
 }
 
 func (i *Installer) BuildKustomizeInstaller() {
-	for _, ns := range i.appConfig.Application.Namespaces {
+	for _, ns := range i.appContext.AppConfig.Namespaces {
 		log.Printf("Creating kustomize installer for NS %s", ns.Name)
 
-		outputFolder := i.installerConfig.OutputFolderForNS(ns.Name)
-		kustomizeFolder := i.installerConfig.BaseKustomizeFolderForNS(ns.Name)
+		outputFolder := i.appContext.OutputFolderForNS(ns.Name)
+		kustomizeFolder := i.appContext.BaseKustomizeFolderForNS(ns.Name)
 
-		kustomization := filepath.Join(kustomizeFolder, config.KustomizationFile)
+		kustomization := filepath.Join(kustomizeFolder, KustomizationFile)
 		os.Create(kustomization)
-		AppendToFile(kustomization, "resources:")
+		utils.AppendToFile(kustomization, "resources:")
 		filepath.WalkDir(outputFolder, func(path string, d fs.DirEntry, e error) error {
 			if e != nil {
 				return e
@@ -67,7 +66,7 @@ func (i *Installer) BuildKustomizeInstaller() {
 
 				// log.Printf("Moving %s to %s", d.Name(), kustomizeFolder)
 				os.Rename(path, filepath.Join(kustomizeFolder, d.Name()))
-				AppendToFile(kustomization, fmt.Sprintf("\n  - %s", d.Name()))
+				utils.AppendToFile(kustomization, fmt.Sprintf("\n  - %s", d.Name()))
 			}
 			return nil
 		})
@@ -77,25 +76,25 @@ func (i *Installer) BuildKustomizeInstaller() {
 }
 
 func (i *Installer) createKustomizeTemplate() {
-	for _, ns := range i.appConfig.Application.Namespaces {
+	for _, ns := range i.appContext.AppConfig.Namespaces {
 		log.Printf("Creating kustomize template for NS %s", ns.Name)
-		templateFolder := i.installerConfig.KustomizeTemplateFolderForNS(ns.Name)
+		templateFolder := i.appContext.KustomizeTemplateFolderForNS(ns.Name)
 
-		paramsFolder := filepath.Join(templateFolder, config.ParamsFolder)
-		os.Rename(i.installerConfig.TmpParamsFolderForNS(ns.Name), paramsFolder)
-		secretsFolder := filepath.Join(templateFolder, config.SecretsFolder)
-		os.Rename(i.installerConfig.TmpSecretsFolderForNS(ns.Name), secretsFolder)
+		paramsFolder := filepath.Join(templateFolder, ParamsFolder)
+		os.Rename(i.appContext.TmpParamsFolderForNS(ns.Name), paramsFolder)
+		secretsFolder := filepath.Join(templateFolder, SecretsFolder)
+		os.Rename(i.appContext.TmpSecretsFolderForNS(ns.Name), secretsFolder)
 
-		templateKustomization := i.installerConfig.KustomizationFileFrom(templateFolder)
+		templateKustomization := i.appContext.KustomizationFileFrom(templateFolder)
 		os.Create(templateKustomization)
 		text := "resources:\n" +
 			"  - ../base\n"
-		AppendToFile(templateKustomization, text)
+		utils.AppendToFile(templateKustomization, text)
 
 		text = "generatorOptions:\n" +
 			"  disableNameSuffixHash: true\n" +
 			"configMapGenerator:"
-		AppendToFile(templateKustomization, text)
+		utils.AppendToFile(templateKustomization, text)
 		err := filepath.WalkDir(paramsFolder,
 			func(path string, d fs.DirEntry, err error) error {
 				if err != nil {
@@ -110,13 +109,13 @@ func (i *Installer) createKustomizeTemplate() {
 						"  behavior: merge\n" +
 						"  envs:\n" +
 						"  - %s/%s"
-					AppendToFile(templateKustomization, text, configMap, config.ParamsFolder, d.Name())
+					utils.AppendToFile(templateKustomization, text, configMap, ParamsFolder, d.Name())
 				}
 				return nil
 			})
 		if err == nil {
 			text := "\nsecretGenerator:"
-			AppendToFile(templateKustomization, text)
+			utils.AppendToFile(templateKustomization, text)
 			err = filepath.WalkDir(secretsFolder,
 				func(path string, d fs.DirEntry, err error) error {
 					if err != nil {
@@ -130,7 +129,7 @@ func (i *Installer) createKustomizeTemplate() {
 							"  behavior: create\n" +
 							"  envs:\n" +
 							"  - %s/%s"
-						AppendToFile(templateKustomization, text, secret, config.SecretsFolder, d.Name())
+						utils.AppendToFile(templateKustomization, text, secret, SecretsFolder, d.Name())
 					}
 					return nil
 				})
@@ -141,7 +140,7 @@ func (i *Installer) createKustomizeTemplate() {
 
 		if len(i.sccToBeReplacedByNS[ns.Name]) > 0 {
 			text := "\nreplacements:"
-			AppendToFile(templateKustomization, text)
+			utils.AppendToFile(templateKustomization, text)
 
 			for _, sccForSA := range i.sccToBeReplacedByNS[ns.Name] {
 				text = "\n" +
@@ -158,7 +157,7 @@ func (i *Installer) createKustomizeTemplate() {
 					"    options:\n" +
 					"      delimiter: \":\"\n" +
 					"      index: 2\n"
-				AppendToFile(templateKustomization, text, sccForSA.serviceAccountName, sccForSA.sccName)
+				utils.AppendToFile(templateKustomization, text, sccForSA.serviceAccountName, sccForSA.sccName)
 			}
 		}
 	}
@@ -173,7 +172,7 @@ func (i *Installer) handleServiceAccount(kustomization string, namespace string,
 	for _, clusterRoleBinding := range clusterRoleBindings {
 		// TODO: update CRB name
 		yamlFile := fmt.Sprintf("%s-%s.yaml", "ClusterRoleBinding", clusterRoleBinding.Name)
-		yamlPath := filepath.Join(i.installerConfig.BaseKustomizeFolderForNS(namespace), yamlFile)
+		yamlPath := filepath.Join(i.appContext.BaseKustomizeFolderForNS(namespace), yamlFile)
 
 		clusterRoleBindingSpec := rbacV1.ClusterRoleBinding{
 			// TODO: These two are not collected by client-go API
@@ -213,11 +212,11 @@ func (i *Installer) handleServiceAccount(kustomization string, namespace string,
 			log.Fatal(err)
 		}
 
-		AppendToFile(kustomization, fmt.Sprintf("\n  - %s", yamlFile))
+		utils.AppendToFile(kustomization, fmt.Sprintf("\n  - %s", yamlFile))
 	}
 
 	sccs := i.clusterRolesInspector.SecurityContextConstraintsForSA(namespace, serviceAccount.Name)
-	systemName := SystemNameForSA(namespace, serviceAccount.Name)
+	systemName := utils.SystemNameForSA(namespace, serviceAccount.Name)
 	for _, scc := range sccs {
 		// Temporary solution
 		// Create a copy of the original SCC, rename it top match the SA and connect to this SA only
@@ -229,7 +228,7 @@ func (i *Installer) handleServiceAccount(kustomization string, namespace string,
 		sccCopy.Users = []string{systemName}
 
 		yamlFile := fmt.Sprintf("%s-%s.yaml", "SecurityContextConstraints", sccCopy.Name)
-		yamlPath := filepath.Join(i.installerConfig.BaseKustomizeFolderForNS(namespace), yamlFile)
+		yamlPath := filepath.Join(i.appContext.BaseKustomizeFolderForNS(namespace), yamlFile)
 
 		log.Printf("Creating YAML %s for SecurityContextConstraints %s to assign to ServiceAccount %s", yamlFile,
 			sccCopy.Name, serviceAccount.Name)
@@ -243,7 +242,7 @@ func (i *Installer) handleServiceAccount(kustomization string, namespace string,
 			log.Fatal(err)
 		}
 
-		AppendToFile(kustomization, fmt.Sprintf("\n  - %s", yamlFile))
+		utils.AppendToFile(kustomization, fmt.Sprintf("\n  - %s", yamlFile))
 
 		sccForSA := SccForSA{serviceAccountName: serviceAccount.Name, sccName: sccCopy.Name}
 		if sccsForSA, ok := i.sccToBeReplacedByNS[namespace]; ok {

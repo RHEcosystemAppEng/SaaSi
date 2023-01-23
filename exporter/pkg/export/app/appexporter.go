@@ -1,4 +1,4 @@
-package installer
+package app
 
 import (
 	"log"
@@ -7,35 +7,49 @@ import (
 	"strings"
 
 	"github.com/RHEcosystemAppEng/SaaSi/exporter/pkg/config"
+	"github.com/RHEcosystemAppEng/SaaSi/exporter/pkg/connect"
 	"github.com/konveyor/crane/cmd/apply"
 	"github.com/konveyor/crane/cmd/export"
 	"github.com/konveyor/crane/cmd/transform"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 )
 
-type Exporter struct {
-	appConfig       *config.ApplicationConfig
-	installerConfig *config.InstallerConfig
+type AppExporter struct {
+	appContext *AppContext
 }
 
-func NewExporterFromConfig(appConfig *config.ApplicationConfig, installerConfig *config.InstallerConfig) *Exporter {
-	exporter := Exporter{appConfig: appConfig, installerConfig: installerConfig}
+func NewAppExporterFromConfig(config *config.Config, connectionStatus *connect.ConnectionStatus) *AppExporter {
+	exporter := AppExporter{appContext: NewAppContextFromConfig(config, connectionStatus)}
 
 	return &exporter
 }
 
-func (e *Exporter) PrepareOutput() {
-	if _, err := os.Stat(e.installerConfig.AppFolder); !os.IsNotExist(err) {
-		log.Printf("Directory exists %v", e.installerConfig.AppFolder)
-		os.RemoveAll(e.installerConfig.AppFolder)
+func (e *AppExporter) Export() {
+	clusterRolesInspector := NewClusterRolesInspector(e.appContext)
+	clusterRolesInspector.LoadClusterRoles()
+
+	e.PrepareOutput()
+	e.ExportWithCrane()
+
+	parametrizer := NewParametrizerFromConfig(e.appContext)
+	parametrizer.ExposeParameters()
+
+	installer := NewInstallerFromConfig(e.appContext, clusterRolesInspector)
+	installer.BuildKustomizeInstaller()
+}
+
+func (e *AppExporter) PrepareOutput() {
+	if _, err := os.Stat(e.appContext.AppFolder); !os.IsNotExist(err) {
+		log.Printf("Directory exists %v", e.appContext.AppFolder)
+		os.RemoveAll(e.appContext.AppFolder)
 	}
 
-	if err := os.MkdirAll(e.installerConfig.AppFolder, os.ModePerm); err != nil {
-		log.Fatalf("Cannot create %v folder: %v", e.installerConfig.AppFolder, err)
+	if err := os.MkdirAll(e.appContext.AppFolder, os.ModePerm); err != nil {
+		log.Fatalf("Cannot create %v folder: %v", e.appContext.AppFolder, err)
 	}
-	log.Printf("Created output folder %s", e.installerConfig.AppFolder)
-	for _, ns := range e.appConfig.Application.Namespaces {
-		nsFolder := filepath.Join(e.installerConfig.AppFolder, ns.Name)
+	log.Printf("Created output folder %s", e.appContext.AppFolder)
+	for _, ns := range e.appContext.AppConfig.Namespaces {
+		nsFolder := filepath.Join(e.appContext.AppFolder, ns.Name)
 		if err := os.Mkdir(nsFolder, os.ModePerm); err != nil {
 			log.Fatalf("Cannot create %v folder: %v", nsFolder, err)
 		}
@@ -43,22 +57,22 @@ func (e *Exporter) PrepareOutput() {
 	}
 }
 
-func (e *Exporter) ExportWithCrane() {
-	for _, ns := range e.appConfig.Application.Namespaces {
-		nsFolder := filepath.Join(e.installerConfig.AppFolder, ns.Name)
+func (e *AppExporter) ExportWithCrane() {
+	for _, ns := range e.appContext.AppConfig.Namespaces {
+		nsFolder := filepath.Join(e.appContext.AppFolder, ns.Name)
 		log.Printf("Exporting NS %s with crane", nsFolder)
 
-		exportFolder := e.installerConfig.ExportFolderForNS(ns.Name)
-		transformFolder := e.installerConfig.TransformFolderForNS(ns.Name)
-		outputFolder := e.installerConfig.OutputFolderForNS(ns.Name)
+		exportFolder := e.appContext.ExportFolderForNS(ns.Name)
+		transformFolder := e.appContext.TransformFolderForNS(ns.Name)
+		outputFolder := e.appContext.OutputFolderForNS(ns.Name)
 
-		doExport(ns.Name, exportFolder)
+		doExport(e.appContext.KubeConfigPath(), ns.Name, exportFolder)
 		doTransform(exportFolder, transformFolder)
 		doApply(exportFolder, transformFolder, outputFolder)
 	}
 }
 
-func doExport(namespace string, exportFolder string) {
+func doExport(kubeConfigPath string, namespace string, exportFolder string) {
 	exportCmd := export.NewExportCommand(genericclioptions.IOStreams{
 		In:     strings.NewReader(""),
 		Out:    os.Stdout,
@@ -69,6 +83,8 @@ func doExport(namespace string, exportFolder string) {
 	exportNamespace.Value.Set(namespace)
 	exportDir := exportCmd.Flags().Lookup("export-dir")
 	exportDir.Value.Set(exportFolder)
+	kubeconfig := exportCmd.Flags().Lookup("kubeconfig")
+	kubeconfig.Value.Set(kubeConfigPath)
 	exportCmd.SetArgs([]string{})
 
 	_, err := exportCmd.ExecuteC()

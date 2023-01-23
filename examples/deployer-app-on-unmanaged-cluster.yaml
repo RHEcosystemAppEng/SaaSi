@@ -1,40 +1,41 @@
 deployer:
   cluster:
+    # Must be unique
+    clusterId: UNMANAGED_CLUSTER_ID
     server: API-SERVER-URL
     user: USERNAME
     # Must be valid at the moment we deploy the application
     token: TOKEN
-    userName: CUSTOM_CLUSTER_NAME
   application:
     name: APP
     namespaceMappingFormat: "%s-prod"
     namespaces:
-      - name: NS1
-        # If missing, the namespaceMappingFormat or the original name are applied
-        target: NEW-NS1
+    - name: NS1
+      # If missing, the namespaceMappingFormat or the original name are applied
+      target: NEW-NS1
+      params:
+      - configMap: MAP-1
         params:
-          - configMap: MAP-1
-              params:
-                  - name: PARAM-1
-                    value: VALUE-1
-                    - name: "..."
-                      value: "..."
-          - configMap: MAP-2
-              params:
-                - name: PARAM-1
-                  value: VALUE-1
-                - name: "..."
-                  value: "..."
-        secrets:
-          - secret: SECRET-1
-              params:
-                  - name: PARAM-1
-                    value: VALUE-1
-                    - name: "..."
-                      value: "..."
-          - configMap: SECRET-2
-              params:
-                  - name: PARAM-1
-                    value: VALUE-1
-                    - name: "..."
-                      value: "..."
+        - name: PARAM-1
+          value: VALUE-1
+        - name: "..."
+          value: "..."
+      - configMap: MAP-2
+        params:
+        - name: PARAM-1
+          value: VALUE-1
+        - name: "..."
+          value: "..."
+      secrets:
+      - secret: SECRET-1
+        params:
+        - name: PARAM-1
+          value: VALUE-1
+        - name: "..."
+          value: "..."
+      - secret: SECRET-2
+        params:
+        - name: PARAM-1
+          value: VALUE-1
+        - name: "..."
+          value: "..."

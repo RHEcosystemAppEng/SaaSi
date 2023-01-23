@@ -1,4 +1,4 @@
-package installer
+package app
 
 import (
 	"fmt"
@@ -11,7 +11,7 @@ import (
 
 	api "github.com/openshift/api"
 
-	"github.com/RHEcosystemAppEng/SaaSi/exporter/pkg/config"
+	"github.com/RHEcosystemAppEng/SaaSi/exporter/pkg/export/utils"
 	"golang.org/x/exp/slices"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -20,19 +20,18 @@ import (
 )
 
 type Parametrizer struct {
-	appConfig       *config.ApplicationConfig
-	installerConfig *config.InstallerConfig
+	appContext *AppContext
 }
 
-func NewParametrizerFromConfig(appConfig *config.ApplicationConfig, installerConfig *config.InstallerConfig) *Parametrizer {
-	parametrizer := Parametrizer{appConfig: appConfig, installerConfig: installerConfig}
+func NewParametrizerFromConfig(appContext *AppContext) *Parametrizer {
+	parametrizer := Parametrizer{appContext: appContext}
 	return &parametrizer
 }
 
 func (p *Parametrizer) ExposeParameters() {
-	for _, ns := range p.appConfig.Application.Namespaces {
+	for _, ns := range p.appContext.AppConfig.Namespaces {
 		log.Printf("Exposing parameters for NS %s", ns.Name)
-		outputFolder := p.installerConfig.OutputFolderForNS(ns.Name)
+		outputFolder := p.appContext.OutputFolderForNS(ns.Name)
 		var yamlFiles []string
 		filepath.WalkDir(outputFolder, func(s string, d fs.DirEntry, e error) error {
 			if e != nil {
@@ -86,7 +85,7 @@ func (*Parametrizer) resetNamespace(obj runtime.Object, yamlFile string) {
 		log.Printf("Resetting namespace %s at %s/%s", namespace, kind, name)
 		ns.SetString("")
 
-		os.Rename(yamlFile, BackupFile(yamlFile))
+		os.Rename(yamlFile, utils.BackupFile(yamlFile))
 		newFile, err := os.Create(yamlFile)
 		if err != nil {
 			log.Fatal(err)
@@ -101,18 +100,18 @@ func (*Parametrizer) resetNamespace(obj runtime.Object, yamlFile string) {
 
 func (p *Parametrizer) handleConfigMap(configMapFile string, configMap *v1.ConfigMap) {
 	log.Printf("Handling ConfigMap %s", configMap.Name)
-	tmpParamsFolder := p.installerConfig.TmpParamsFolderForNS(configMap.Namespace)
+	tmpParamsFolder := p.appContext.TmpParamsFolderForNS(configMap.Namespace)
 	// RunCommand("oc", "extract", "-f", configMapFile, "--to", tmpParamsFolder)
 
-	mandatoryParams := p.appConfig.MandatoryParamsByNSAndConfigMap(configMap.Namespace, configMap.Name)
+	mandatoryParams := p.appContext.AppConfig.MandatoryParamsByNSAndConfigMap(configMap.Namespace, configMap.Name)
 
 	templateFile := filepath.Join(tmpParamsFolder, fmt.Sprintf("%s.env", configMap.Name))
 	os.Create(templateFile)
 	for key := range configMap.Data {
 		if slices.Contains(mandatoryParams, key) {
-			AppendToFile(templateFile, fmt.Sprintf("%s=%s\n", key, config.MandatoryValue))
+			utils.AppendToFile(templateFile, fmt.Sprintf("%s=%s\n", key, MandatoryValue))
 		} else {
-			AppendToFile(templateFile, fmt.Sprintf("#%s=%s\n", key, config.NoValue))
+			utils.AppendToFile(templateFile, fmt.Sprintf("#%s=%s\n", key, NoValue))
 		}
 
 	}
@@ -134,14 +133,14 @@ func (p *Parametrizer) handleSecret(secretFile string, secret *v1.Secret) {
 	if secret.Type != "Opaque" {
 		log.Printf("Removing non-Opaque Secret %s", secret.Name)
 	} else {
-		tmpSecretsFolder := p.installerConfig.TmpSecretsFolderForNS(secret.Namespace)
+		tmpSecretsFolder := p.appContext.TmpSecretsFolderForNS(secret.Namespace)
 		secretsFile := filepath.Join(tmpSecretsFolder, fmt.Sprintf("%s.env", secret.Name))
 		os.Create(secretsFile)
 		log.Printf("Creating secret configuration template %s", secretsFile)
 
 		for key, _ := range secret.Data {
-			AppendToFile(secretsFile, fmt.Sprintf("%s=%s\n", key, config.MandatoryValue))
+			utils.AppendToFile(secretsFile, fmt.Sprintf("%s=%s\n", key, MandatoryValue))
 		}
 	}
-	os.Rename(secretFile, BackupFile(secretFile))
+	os.Rename(secretFile, utils.BackupFile(secretFile))
 }

@@ -1,10 +1,10 @@
-deployer:
+exporter:
   cluster:
+    # Must be unique
+    clusterId: UNIQUE-ID
     server: API-SERVER-URL
-    user: USERNAME
     # Must be valid at the moment we export the configuration
     token: TOKEN
-    export: true
   application:
     name: APP
     namespaces:

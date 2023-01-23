@@ -31,26 +31,32 @@ installer for the [deployer](../deployer/README.md) tool.
       * Errors must be raised while trying to install the default template for the secrets
 
 ## Builder configuration
-The `exporter` runs using a configuration that specifies the packaging behavior: 
+The `exporter` runs using a configuration that specifies the desired behavior: 
 ```yaml
-application:
-  # This creates an installer package named APP
-  name: APP
-  namespaces:
-  - name: NS1
-    # No default values are generated for each of the following mandatory params
-    mandatory-params:
-    # Provide the name of one of the exported ConfigMaps
-    - configMap: MAP-1
-      params:
-      # Paramaters are given as a list of key names  
-      - PARAM-1
-      - "..."
-      - PARAM-N
+exporter:
+  cluster:
+    # Must be unique
+    clusterId: UNIQUE-ID
+    server: API-SERVER-URL
+    # Must be valid at the moment we export the configuration
+    token: TOKEN
+  application:
+    # This creates an installer package named APP
+    name: APP
+    namespaces:
+    - name: NS1
+      # No default values are generated for each of the following mandatory params
+      mandatory-params:
+      # Provide the name of one of the exported ConfigMaps
+      - configMap: MAP-1
+        params:
+        # Paramaters are given as a list of key names  
+        - PARAM-1
+        - "..."
+        - PARAM-N
 ```
 
 ## Running the builder
-
 Prerequisites:
 * Install `oc` CLI tool
 * Install `go` CLI tool (at least version 1.19)
@@ -58,31 +64,54 @@ Prerequisites:
 
 Run this command to create the installer from the given configuration `myapp.yaml`:
 ```bash
-go run main.go myapp.yaml
+go run main.go -f myapp.yaml
 ```
-
 The command creates an `output/<APP NAME>/installer` folder in the current directory with the whole installer package.
 
+Available options:
+```bash
+> go run main.go --help
+  -f string
+        Application configuration file
+  -i string
+        Root installation folder (shorthand) (default "<CURRENT_DIR>")
+  -install-dir string
+        Root installation folder (default "<CURRENT_DIR>")
+  -o string
+        Root output folder (shorthand) (default "<CURRENT_DIR>/output")
+  -output-dir string
+        Root output folder (default "<CURRENT_DIR>/output")
+
+
 ### Output specification
-The `installer/kustomize` folder contains the base configuration and an overlay template for each of the configured 
-namespaces:
+Under the configured output folder the exporter creates:
+* one `clusters` folder:
+  * one folder for each exported cluster configuration, using the `clusterId` specified in the `cluster` configuration
+* one `applications` folder:
+  * one folder for each exported application, using the `name` specified in the `application` configuration
+  * one subfolder for each managed namespace configured in `namespaces`, with `base` and `template` configurations for `kustomize`
+
 ```bash
 ├── output
-│   └── "APPLICATION"
-│       └── installer
+│   └── clusters
+│       └── CLUSTER_ID1
+│           └── CLUSTER_ID1.env
+...
+│   └── applications
+│       └── APPLICATION1
 │           └── kustomize
-│               └── "NAMESPACE1"
+│               └── NAMESPACE1
 │                   ├── base
-│                   │   ├── "RESOURCE1.yaml"
-│                   │   ├── "RESOURCE2.yaml"
+│                   │   ├── RESOURCE1.yaml
+│                   │   ├── RESOURCE2.yaml
 │                   │   └── kustomization.yaml
 │                   └── template
 │                       ├── kustomization.yaml
 │                       ├── params
-│                       │   ├── "CONFIG_MAP1.env"
-│                       │   └── "CONFIG_MAP2.env"
+│                       │   ├── CONFIG_MAP1.env
+│                       │   └── CONFIG_MAP2.env
 │                       └── secrets
-│                           └── "SECRET1.env"
+│                           └── SECRET1.env
 ```
 
 The `base` kustomization contains the resources extracted from the source cluster, stripped of the status information,
@@ -91,12 +120,12 @@ cluster specific settings and namespace configuration.
 The `template` overlay is an example of a possible `kustomize` overlay, with skeletons of environment files to override the
 `ConfigMap`s parameters (remove the `#` comment and set the desired value) and all the `Secret` values:
 ```bash
-> cat output/Infinity/installer/kustomize/holdings/template/params/CONFIG_MAP1.env
+> cat output/Infinity/kustomize/holdings/template/params/CONFIG_MAP1.env
 #KEY1=__DEFAULT__
 #KEY2=__DEFAULT__
 KEY3=__MANDATORY__
 
-> cat output/Infinity/installer/kustomize/holdings/template/secrets/SECRET1.env
+> cat output/Infinity/kustomize/holdings/template/secrets/SECRET1.env
 KEY1=__DEFAULT__
 ```
 
