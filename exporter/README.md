@@ -81,7 +81,7 @@ Available options:
         Root output folder (shorthand) (default "<CURRENT_DIR>/output")
   -output-dir string
         Root output folder (default "<CURRENT_DIR>/output")
-
+```
 
 ### Output specification
 Under the configured output folder the exporter creates:
