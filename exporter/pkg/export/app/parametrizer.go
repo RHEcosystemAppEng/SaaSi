@@ -130,9 +130,7 @@ func (p *Parametrizer) handleConfigMap(configMapFile string, configMap *v1.Confi
 
 func (p *Parametrizer) handleSecret(secretFile string, secret *v1.Secret) {
 	log.Printf("Handling Secret %s", secret.Name)
-	if secret.Type != "Opaque" {
-		log.Printf("Removing non-Opaque Secret %s", secret.Name)
-	} else {
+	if secret.Type == "Opaque" {
 		tmpSecretsFolder := p.appContext.TmpSecretsFolderForNS(secret.Namespace)
 		secretsFile := filepath.Join(tmpSecretsFolder, fmt.Sprintf("%s.env", secret.Name))
 		os.Create(secretsFile)
@@ -141,6 +139,12 @@ func (p *Parametrizer) handleSecret(secretFile string, secret *v1.Secret) {
 		for key, _ := range secret.Data {
 			utils.AppendToFile(secretsFile, fmt.Sprintf("%s=%s\n", key, MandatoryValue))
 		}
+		os.Rename(secretFile, utils.BackupFile(secretFile))
+	} else if secret.Type == "kubernetes.io/dockerconfigjson" {
+		log.Printf("Keeping kubernetes.io/dockerconfigjson Secret %s", secret.Name)
+		p.resetNamespace(secret, secretFile)
+	} else {
+		log.Printf("Removing unmanaged Secret %s", secret.Name)
+		os.Rename(secretFile, utils.BackupFile(secretFile))
 	}
-	os.Rename(secretFile, utils.BackupFile(secretFile))
 }
