@@ -30,3 +30,6 @@ A tool to replicate an existing OpenShift/Kubernetes environment on multiple clu
 - all SaasI components should expose API
   - during the first phases some SaasI components might be triggerd from CLI however the CLI will call an API exposed by the SaaSi components  
   - future goal is to turn SaaSi components to services 
+- develop UI application using react with typescript instead of using backstage.io
+  - backstage.io customization requires more time to understand the framework
+  - it is possible that at some point we may have to face backstage software catelog limitations for our use case
