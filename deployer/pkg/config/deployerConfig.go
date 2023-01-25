@@ -19,8 +19,8 @@ type DeployerConfig struct {
 }
 
 type ComponentConfig struct {
-	Cluster       Cluster     `yaml:"cluster"`
-	Application   Application `yaml:"application"`
+	Cluster       ClusterConfig     `yaml:"cluster"`
+	Application   ApplicationConfig `yaml:"application"`
 	RootOutputDir string
 }
 
@@ -28,7 +28,7 @@ type ComponentConfig struct {
 // ----Cluster Config----
 // ----------------------
 
-type Cluster struct {
+type ClusterConfig struct {
 	Server      string        `yaml:"server"`
 	User        string        `yaml:"user"`
 	Token       string        `yaml:"token"`
@@ -55,7 +55,7 @@ type ClusterParams struct {
 // ------App Config------
 // ----------------------
 
-type Application struct {
+type ApplicationConfig struct {
 	Name                   string       `yaml:"name"`
 	NamespaceMappingFormat string       `yaml:"namespaceMappingFormat"`
 	Namespaces             []Namespaces `yaml:"namespaces"`

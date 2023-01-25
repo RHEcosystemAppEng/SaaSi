@@ -36,14 +36,14 @@ var (
 
 type ApplicationPkg struct {
 	Uuid                 uuid.UUID
-	AppConfig            config.Application
+	AppConfig            config.ApplicationConfig
 	UuidDir              string
 	KustomizeDir         string
 	DeloymentDir         string
 	UnsetMandatoryParams map[string][]string
 }
 
-func NewApplicationPkg(appConfig config.Application, rootOutputDir string) *ApplicationPkg {
+func NewApplicationPkg(appConfig config.ApplicationConfig, rootOutputDir string) *ApplicationPkg {
 
 	// init ApplicationPkg
 	pkg := ApplicationPkg{}
