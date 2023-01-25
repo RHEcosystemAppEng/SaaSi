@@ -66,7 +66,7 @@ Available options:
 ```bash
 > go run main.go --help
   -f string
-        Application configuration file
+        Application configuration file for deployment
   -e string
         Root folder of exporter application (shorthand)
   -exporter-dir string

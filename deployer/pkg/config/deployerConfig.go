@@ -1,10 +1,17 @@
 package config
 
 import (
+	"flag"
 	"io/ioutil"
 	"log"
+	"os"
+	"path/filepath"
 
 	"gopkg.in/yaml.v2"
+)
+
+const (
+	DEFAULT_OUTPUT_DIR = "output"
 )
 
 type DeployerConfig struct {
@@ -12,8 +19,9 @@ type DeployerConfig struct {
 }
 
 type ComponentConfig struct {
-	Cluster     Cluster     `yaml:"cluster"`
-	Application Application `yaml:"application"`
+	Cluster       Cluster     `yaml:"cluster"`
+	Application   Application `yaml:"application"`
+	RootOutputDir string
 }
 
 // ----------------------
@@ -75,16 +83,41 @@ type ApplicationParams struct {
 	Value string `yaml:"value"`
 }
 
-func ReadDeployerConfig(configFile string) *ComponentConfig {
-	yfile, err := ioutil.ReadFile(configFile)
+func ReadDeployerConfig() *ComponentConfig {
+
+	// define config file flag
+	configFile := flag.String("f", "", "Application configuration file for deployemnt")
+
+	// define default output directory
+	pwd, err := os.Getwd()
+	if err != nil {
+		log.Fatalf("Failed to get root directory: %s", err)
+	}
+	defaultRootOutputDir := filepath.Join(pwd, DEFAULT_OUTPUT_DIR)
+
+	// define output directory flag
+	var rootOutputDir string
+	flag.StringVar(&rootOutputDir, "output-dir", defaultRootOutputDir, "Root output folder")
+	flag.StringVar(&rootOutputDir, "o", defaultRootOutputDir, "Root output folder (shorthand)")
+
+	// get os arguments
+	flag.Parse()
+
+	// read deployer config file
+	yfile, err := ioutil.ReadFile(*configFile)
 	if err != nil {
 		log.Fatal(err)
 	}
 
+	// Unmarshal deployer config
 	config := DeployerConfig{}
 	err = yaml.Unmarshal(yfile, &config)
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	// set output directory for components
+	config.Deployer.RootOutputDir = rootOutputDir
+
 	return &config.Deployer
 }
