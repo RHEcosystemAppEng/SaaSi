@@ -18,7 +18,7 @@ func DeployApplication(pkg *packager.ApplicationPkg) {
 	utils.ValidateRequirements(utils.OC)
 
 	// deploy application package using oc cli
-	cmd := exec.Command("oc", "apply", "-f", ".")
+	cmd := exec.Command("oc", "apply", "-f", ".", "--kubeconfig", pkg.DeployerContext.GetKubeConfigPath())
 	cmd.Dir = pkg.DeloymentDir
 	if err = cmd.Run(); err != nil {
 		log.Fatalf("Failed to deploy files from deployment directory: %s, Error: %s", pkg.DeloymentDir, err)

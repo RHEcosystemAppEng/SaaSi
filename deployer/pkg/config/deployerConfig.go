@@ -14,14 +14,18 @@ type FlagArgs struct {
 	RootSourceDir string `short:"s" long:"source-dir" description:"Root source folder" required:"true"`
 }
 
+// ----------------------
+// ----Deployer Config----
+// ----------------------
+
 type DeployerConfig struct {
 	Deployer ComponentConfig `yaml:"deployer"`
 }
 
 type ComponentConfig struct {
-	Cluster     ClusterConfig     `yaml:"cluster"`
-	Application ApplicationConfig `yaml:"application"`
-	FlagArgs    FlagArgs
+	ClusterConfig     ClusterConfig     `yaml:"cluster"`
+	ApplicationConfig ApplicationConfig `yaml:"application"`
+	FlagArgs          FlagArgs
 }
 
 // ----------------------
@@ -83,9 +87,12 @@ type ApplicationParams struct {
 	Value string `yaml:"value"`
 }
 
-func ReadDeployerConfig() *ComponentConfig {
+func InitDeployerConfig() *ComponentConfig {
+
+	// init flags for input arguments
 	flagArgs := FlagArgs{}
-	// parse input arguments from flags
+
+	// parse input arguments from os into flags
 	_, err := flags.Parse(&flagArgs)
 	if err != nil {
 		log.Fatal("Failed to parse os input arguments")
@@ -104,7 +111,7 @@ func ReadDeployerConfig() *ComponentConfig {
 		log.Fatal(err)
 	}
 
-	// set flags arguments for components
+	// set flag input arguments for components
 	config.Deployer.FlagArgs = flagArgs
 
 	return &config.Deployer

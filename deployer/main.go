@@ -16,20 +16,20 @@ import (
 func main() {
 
 	// Unmarshal deployer config and get cluster and application configs
-	componentConfig := config.ReadDeployerConfig()
+	componentConfig := config.InitDeployerConfig()
 	pretty.Printf("Deploying the following configuration: \n%# v", componentConfig)
 
 	// connect to cluster
-	kubeConnection := connect.ConnectToCluster(componentConfig.Cluster)
+	kubeConnection := connect.ConnectToCluster(componentConfig.ClusterConfig)
 
 	// create deployer context to hold global variables
 	deployerContext := context.InitDeployerContext(componentConfig.FlagArgs, kubeConnection)
 
 	// check if application deployment has been requested
-	if !reflect.ValueOf(componentConfig.Application).IsZero() {
+	if !reflect.ValueOf(componentConfig.ApplicationConfig).IsZero() {
 
 		// create application deployment package
-		applicationPkg := packager.NewApplicationPkg(componentConfig.Application, deployerContext)
+		applicationPkg := packager.NewApplicationPkg(componentConfig.ApplicationConfig, deployerContext)
 
 		// check if all mandatory variables have been set, else list unset vars and throw exception
 		if len(applicationPkg.UnsetMandatoryParams) > 0 {
