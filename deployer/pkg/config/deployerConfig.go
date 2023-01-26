@@ -4,30 +4,42 @@ import (
 	"io/ioutil"
 	"log"
 
+	"github.com/jessevdk/go-flags"
 	"gopkg.in/yaml.v2"
 )
+
+type FlagArgs struct {
+	ConfigFile    string `short:"f" description:"Application configuration file for deployemnt" required:"true"`
+	RootOutputDir string `short:"o" long:"output-dir" default:"output" description:"Root output folder"`
+	RootSourceDir string `short:"s" long:"source-dir" description:"Root source folder" required:"true"`
+}
+
+// ----------------------
+// ----Deployer Config----
+// ----------------------
 
 type DeployerConfig struct {
 	Deployer ComponentConfig `yaml:"deployer"`
 }
 
 type ComponentConfig struct {
-	Cluster     Cluster     `yaml:"cluster"`
-	Application Application `yaml:"application"`
+	ClusterConfig     ClusterConfig     `yaml:"cluster"`
+	ApplicationConfig ApplicationConfig `yaml:"application"`
+	FlagArgs          FlagArgs
 }
 
 // ----------------------
 // ----Cluster Config----
 // ----------------------
 
-type Cluster struct {
-	Server      string        `yaml:"server"`
-	User        string        `yaml:"user"`
-	Token       string        `yaml:"token"`
-	FromCluster string        `yaml:"fromCluster"`
-	UserName    string        `yaml:"userName"`
-	Aws         AwsSettings   `yaml:"aws"`
-	Params      ClusterParams `yaml:"params"`
+type ClusterConfig struct {
+	Server        string        `yaml:"server"`
+	User          string        `yaml:"user"`
+	Token         string        `yaml:"token"`
+	FromClusterId string        `yaml:"fromClusterId"`
+	ClusterId     string        `yaml:"clusterId"`
+	Aws           AwsSettings   `yaml:"aws"`
+	Params        ClusterParams `yaml:"params"`
 }
 
 type AwsSettings struct {
@@ -47,7 +59,7 @@ type ClusterParams struct {
 // ------App Config------
 // ----------------------
 
-type Application struct {
+type ApplicationConfig struct {
 	Name                   string       `yaml:"name"`
 	NamespaceMappingFormat string       `yaml:"namespaceMappingFormat"`
 	Namespaces             []Namespaces `yaml:"namespaces"`
@@ -75,16 +87,32 @@ type ApplicationParams struct {
 	Value string `yaml:"value"`
 }
 
-func ReadDeployerConfig(configFile string) *ComponentConfig {
-	yfile, err := ioutil.ReadFile(configFile)
+func InitDeployerConfig() *ComponentConfig {
+
+	// init flags for input arguments
+	flagArgs := FlagArgs{}
+
+	// parse input arguments from os into flags
+	_, err := flags.Parse(&flagArgs)
+	if err != nil {
+		log.Fatal("Failed to parse os input arguments")
+	}
+
+	// read deployer config file
+	yfile, err := ioutil.ReadFile(flagArgs.ConfigFile)
 	if err != nil {
 		log.Fatal(err)
 	}
 
+	// Unmarshal deployer config
 	config := DeployerConfig{}
 	err = yaml.Unmarshal(yfile, &config)
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	// set flag input arguments for components
+	config.Deployer.FlagArgs = flagArgs
+
 	return &config.Deployer
 }
