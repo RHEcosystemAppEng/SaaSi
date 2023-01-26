@@ -5,6 +5,8 @@ import (
 	"reflect"
 
 	"github.com/RHEcosystemAppEng/SaaSi/deployer/pkg/config"
+	"github.com/RHEcosystemAppEng/SaaSi/deployer/pkg/connect"
+	"github.com/RHEcosystemAppEng/SaaSi/deployer/pkg/context"
 	"github.com/RHEcosystemAppEng/SaaSi/deployer/pkg/deployer"
 	"github.com/RHEcosystemAppEng/SaaSi/deployer/pkg/packager"
 	"github.com/RHEcosystemAppEng/SaaSi/deployer/pkg/utils"
@@ -17,15 +19,17 @@ func main() {
 	componentConfig := config.ReadDeployerConfig()
 	pretty.Printf("Deploying the following configuration: \n%# v", componentConfig)
 
-	//
-	// TODO - create and deploy cluster
-	//
+	// connect to cluster
+	kubeConnection := connect.ConnectToCluster(componentConfig.Cluster)
+
+	// create deployer context to hold global variables
+	deployerContext := context.InitDeployerContext(componentConfig.FlagArgs, kubeConnection)
 
 	// check if application deployment has been requested
 	if !reflect.ValueOf(componentConfig.Application).IsZero() {
 
 		// create application deployment package
-		applicationPkg := packager.NewApplicationPkg(componentConfig.Application, componentConfig.RootOutputDir)
+		applicationPkg := packager.NewApplicationPkg(componentConfig.Application, deployerContext)
 
 		// check if all mandatory variables have been set, else list unset vars and throw exception
 		if len(applicationPkg.UnsetMandatoryParams) > 0 {

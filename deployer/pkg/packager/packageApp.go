@@ -7,13 +7,12 @@ import (
 	"path/filepath"
 
 	"github.com/RHEcosystemAppEng/SaaSi/deployer/pkg/config"
+	"github.com/RHEcosystemAppEng/SaaSi/deployer/pkg/context"
 	"github.com/RHEcosystemAppEng/SaaSi/deployer/pkg/utils"
 	"github.com/google/uuid"
 )
 
 const (
-	SOURCE_KUSTOMIZE_DIR = "../exporter/output/applications/Infinity/kustomize"
-
 	APPLICATION_DIR = "applications"
 	KUSTOMIZE_DIR   = "kustomize"
 	DEPLOYMENT_DIR  = "deploy"
@@ -37,13 +36,14 @@ var (
 type ApplicationPkg struct {
 	Uuid                 uuid.UUID
 	AppConfig            config.ApplicationConfig
+	DeployerContext      context.DeployerContext
 	UuidDir              string
 	KustomizeDir         string
 	DeloymentDir         string
 	UnsetMandatoryParams map[string][]string
 }
 
-func NewApplicationPkg(appConfig config.ApplicationConfig, rootOutputDir string) *ApplicationPkg {
+func NewApplicationPkg(appConfig config.ApplicationConfig, deployerContext *context.DeployerContext) *ApplicationPkg {
 
 	// init ApplicationPkg
 	pkg := ApplicationPkg{}
@@ -54,9 +54,12 @@ func NewApplicationPkg(appConfig config.ApplicationConfig, rootOutputDir string)
 	// assign configuration
 	pkg.AppConfig = appConfig
 
+	// assign deployer context
+	pkg.DeployerContext = *deployerContext
+
 	// create application directories
 	// unique application directory by uuid
-	pkg.UuidDir = filepath.Join(rootOutputDir, APPLICATION_DIR, appConfig.Name, pkg.Uuid.String())
+	pkg.UuidDir = filepath.Join(pkg.DeployerContext.GetRootOutputDir(), APPLICATION_DIR, pkg.AppConfig.Name, pkg.Uuid.String())
 	utils.CreateDir(pkg.UuidDir)
 	// kustomize directory for namespace artifacts
 	pkg.KustomizeDir = filepath.Join(pkg.UuidDir, KUSTOMIZE_DIR)
@@ -93,7 +96,7 @@ func (pkg *ApplicationPkg) generateApplicationPkg() {
 
 func (pkg *ApplicationPkg) generateNsArtifact(ns config.Namespaces) {
 
-	source := filepath.Join(SOURCE_KUSTOMIZE_DIR, ns.Name)
+	source := filepath.Join(pkg.DeployerContext.GetRootSourceDir(), APPLICATION_DIR, pkg.AppConfig.Name, KUSTOMIZE_DIR, ns.Name)
 	// create pkg template at pkg template path
 	log.Printf("cp -r %s %s", source, pkg.KustomizeDir)
 	cmd := exec.Command("cp", "-r", source, pkg.KustomizeDir)

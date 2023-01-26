@@ -1,27 +1,27 @@
 package config
 
 import (
-	"flag"
 	"io/ioutil"
 	"log"
-	"os"
-	"path/filepath"
 
+	"github.com/jessevdk/go-flags"
 	"gopkg.in/yaml.v2"
 )
 
-const (
-	DEFAULT_OUTPUT_DIR = "output"
-)
+type FlagArgs struct {
+	ConfigFile    string `short:"f" description:"Application configuration file for deployemnt" required:"true"`
+	RootOutputDir string `short:"o" long:"output-dir" default:"output" description:"Root output folder"`
+	RootSourceDir string `short:"s" long:"source-dir" description:"Root source folder" required:"true"`
+}
 
 type DeployerConfig struct {
 	Deployer ComponentConfig `yaml:"deployer"`
 }
 
 type ComponentConfig struct {
-	Cluster       ClusterConfig     `yaml:"cluster"`
-	Application   ApplicationConfig `yaml:"application"`
-	RootOutputDir string
+	Cluster     ClusterConfig     `yaml:"cluster"`
+	Application ApplicationConfig `yaml:"application"`
+	FlagArgs    FlagArgs
 }
 
 // ----------------------
@@ -29,13 +29,13 @@ type ComponentConfig struct {
 // ----------------------
 
 type ClusterConfig struct {
-	Server      string        `yaml:"server"`
-	User        string        `yaml:"user"`
-	Token       string        `yaml:"token"`
-	FromCluster string        `yaml:"fromCluster"`
-	UserName    string        `yaml:"userName"`
-	Aws         AwsSettings   `yaml:"aws"`
-	Params      ClusterParams `yaml:"params"`
+	Server        string        `yaml:"server"`
+	User          string        `yaml:"user"`
+	Token         string        `yaml:"token"`
+	FromClusterId string        `yaml:"fromClusterId"`
+	ClusterId     string        `yaml:"clusterId"`
+	Aws           AwsSettings   `yaml:"aws"`
+	Params        ClusterParams `yaml:"params"`
 }
 
 type AwsSettings struct {
@@ -84,27 +84,15 @@ type ApplicationParams struct {
 }
 
 func ReadDeployerConfig() *ComponentConfig {
-
-	// define config file flag
-	configFile := flag.String("f", "", "Application configuration file for deployemnt")
-
-	// define default output directory
-	pwd, err := os.Getwd()
+	flagArgs := FlagArgs{}
+	// parse input arguments from flags
+	_, err := flags.Parse(&flagArgs)
 	if err != nil {
-		log.Fatalf("Failed to get root directory: %s", err)
+		log.Fatal("Failed to parse os input arguments")
 	}
-	defaultRootOutputDir := filepath.Join(pwd, DEFAULT_OUTPUT_DIR)
-
-	// define output directory flag
-	var rootOutputDir string
-	flag.StringVar(&rootOutputDir, "output-dir", defaultRootOutputDir, "Root output folder")
-	flag.StringVar(&rootOutputDir, "o", defaultRootOutputDir, "Root output folder (shorthand)")
-
-	// get os arguments
-	flag.Parse()
 
 	// read deployer config file
-	yfile, err := ioutil.ReadFile(*configFile)
+	yfile, err := ioutil.ReadFile(flagArgs.ConfigFile)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -116,8 +104,8 @@ func ReadDeployerConfig() *ComponentConfig {
 		log.Fatal(err)
 	}
 
-	// set output directory for components
-	config.Deployer.RootOutputDir = rootOutputDir
+	// set flags arguments for components
+	config.Deployer.FlagArgs = flagArgs
 
 	return &config.Deployer
 }
