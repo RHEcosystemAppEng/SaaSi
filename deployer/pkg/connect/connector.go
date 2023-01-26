@@ -48,7 +48,6 @@ func ConnectToCluster(clusterConfig config.ClusterConfig) *KubeConnection {
 
 	// generate kube config
 	conn.generateKubeConfiguration()
-	log.Printf("Connected to cluster %s at server %s", clusterConfig.ClusterId, clusterConfig.Server)
 
 	// discover supportd resources in the api server
 	discoveryClient, err = discovery.NewDiscoveryClientForConfig(conn.KubeConfig)
@@ -61,7 +60,8 @@ func ConnectToCluster(clusterConfig config.ClusterConfig) *KubeConnection {
 	if err != nil {
 		log.Fatalf("Cannot connect to given cluster: %s", err)
 	}
-	log.Printf("Connected to cluster with version: %s", versionInfo)
+
+	log.Printf("Connected to cluster %s at server %s with version %s", clusterConfig.ClusterId, clusterConfig.Server, versionInfo)
 
 	return &conn
 }
