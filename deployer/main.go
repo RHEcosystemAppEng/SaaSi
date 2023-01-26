@@ -7,8 +7,8 @@ import (
 	"github.com/RHEcosystemAppEng/SaaSi/deployer/pkg/config"
 	"github.com/RHEcosystemAppEng/SaaSi/deployer/pkg/connect"
 	"github.com/RHEcosystemAppEng/SaaSi/deployer/pkg/context"
-	"github.com/RHEcosystemAppEng/SaaSi/deployer/pkg/deployer"
-	"github.com/RHEcosystemAppEng/SaaSi/deployer/pkg/packager"
+	"github.com/RHEcosystemAppEng/SaaSi/deployer/pkg/deployer/app/deployer"
+	"github.com/RHEcosystemAppEng/SaaSi/deployer/pkg/deployer/app/packager"
 	"github.com/RHEcosystemAppEng/SaaSi/deployer/pkg/utils"
 	"github.com/kr/pretty"
 )

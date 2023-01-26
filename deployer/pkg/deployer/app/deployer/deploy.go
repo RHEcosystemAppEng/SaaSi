@@ -4,7 +4,7 @@ import (
 	"log"
 	"os/exec"
 
-	"github.com/RHEcosystemAppEng/SaaSi/deployer/pkg/packager"
+	"github.com/RHEcosystemAppEng/SaaSi/deployer/pkg/deployer/app/packager"
 	"github.com/RHEcosystemAppEng/SaaSi/deployer/pkg/utils"
 )
 
