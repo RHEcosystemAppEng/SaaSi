@@ -5,6 +5,8 @@ installer for the [deployer](../deployer/README.md) tool.
 ## Dependencies
 * [Konveyor Crane](https://konveyor.io/tools/crane/) [Golang](https://go.dev/) packages to export the original configuration and remove cluster specific settings 
 (e.g. IP addresses, status, ...)
+* [Crane OpenShiftPlugin](https://github.com/migtools/crane-plugin-openshift/releases): the binary package for the target
+OS/architecture must be installed in the folder `<HOME>/.local/share/crane/plugins`
 
 ## Features
 * The generated installer can replicate the resources of the original namespaces
