@@ -27,7 +27,7 @@ while getopts 's:c:h' flag; do
     s) SOURCE_VARS_FILE="$OPTARG" ;;
     c) USER_DEF_VARS_FILE="$OPTARG" ;;
     h) print_usage; exit 0 ;;
-    *) echo "Error: unvalid flag. Exiting"; print_usage; exit 1 ;;
+    *) echo "Error: invalid flag. Exiting"; print_usage; exit 1 ;;
   esac
 done
 

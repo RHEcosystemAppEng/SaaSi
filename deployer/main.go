@@ -1,9 +1,6 @@
 package main
 
 import (
-	"log"
-	"reflect"
-
 	"github.com/RHEcosystemAppEng/SaaSi/deployer/pkg/config"
 	"github.com/RHEcosystemAppEng/SaaSi/deployer/pkg/connect"
 	"github.com/RHEcosystemAppEng/SaaSi/deployer/pkg/context"
@@ -11,35 +8,51 @@ import (
 	"github.com/RHEcosystemAppEng/SaaSi/deployer/pkg/deployer/app/packager"
 	"github.com/RHEcosystemAppEng/SaaSi/deployer/pkg/utils"
 	"github.com/kr/pretty"
+	"log"
+	"reflect"
 )
 
 func main() {
 
 	// Unmarshal deployer config and get cluster and application configs
-	componentConfig := config.InitDeployerConfig()
-	pretty.Printf("Deploying the following configuration: \n%# v", componentConfig)
-
-	// connect to cluster
-	kubeConnection := connect.ConnectToCluster(componentConfig.ClusterConfig)
-
-	// create deployer context to hold global variables
-	deployerContext := context.InitDeployerContext(componentConfig.FlagArgs, kubeConnection)
-
-	// check if application deployment has been requested
-	if !reflect.ValueOf(componentConfig.ApplicationConfig).IsZero() {
-
-		// create application deployment package
-		applicationPkg := packager.NewApplicationPkg(componentConfig.ApplicationConfig, deployerContext)
-
-		// check if all mandatory variables have been set, else list unset vars and throw exception
-		if len(applicationPkg.UnsetMandatoryParams) > 0 {
-			log.Fatalf("ERROR: Please complete missing configuration for the following mandatory parameters (<FILEPATH>: <MANDATORY_PARAMETERS>.)\n%s", utils.StringifyMap(applicationPkg.UnsetMandatoryParams))
+	var deployApp bool = true
+ 	componentConfig := config.InitDeployerConfig()
+	//if config.ClusterConfig{}.Server != ""
+	clusterConfig := componentConfig.ClusterConfig
+	//Check if a cluster has been requested
+	if !reflect.ValueOf(clusterConfig).IsZero(){
+		// If there is no existing cluster, need to provision a new one, and delays to deploy the application now
+        if reflect.ValueOf(clusterConfig.Server).IsZero() &&
+			reflect.ValueOf(clusterConfig.Token).IsZero() &&
+			reflect.ValueOf(clusterConfig.User).IsZero(){
+			deployApp = false
 		}
-
-		// deploy application deployment package
-		deployer.DeployApplication(applicationPkg)
-
-	} else {
-		log.Println("No application to deploy")
 	}
+	 if deployApp {
+		pretty.Printf("Deploying the following configuration: \n%# v", componentConfig)
+
+		// connect to cluster
+		kubeConnection := connect.ConnectToCluster(clusterConfig)
+
+		// create deployer context to hold global variables
+		deployerContext := context.InitDeployerContext(componentConfig.FlagArgs, kubeConnection)
+
+		// check if application deployment has been requested
+		if !reflect.ValueOf(componentConfig.ApplicationConfig).IsZero() {
+
+			// create application deployment package
+			applicationPkg := packager.NewApplicationPkg(componentConfig.ApplicationConfig, deployerContext)
+
+			// check if all mandatory variables have been set, else list unset vars and throw exception
+			if len(applicationPkg.UnsetMandatoryParams) > 0 {
+				log.Fatalf("ERROR: Please complete missing configuration for the following mandatory parameters (<FILEPATH>: <MANDATORY_PARAMETERS>.)\n%s", utils.StringifyMap(applicationPkg.UnsetMandatoryParams))
+			}
+
+			// deploy application deployment package
+			deployer.DeployApplication(applicationPkg)
+
+		} else {
+			log.Println("No application to deploy")
+		}
+	 }
 }
