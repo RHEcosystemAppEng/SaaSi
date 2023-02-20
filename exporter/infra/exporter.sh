@@ -40,9 +40,10 @@ echo "Initializing..."
 
 # Configuring "oc CLI"
 export KUBECONFIG
+OC=oc # Replace 'oc' by 'kubectl' if its needed
 
 # Extracting API address
-CLUSTER_API=$(oc cluster-info | \
+CLUSTER_API=$(OC cluster-info | \
 	# removing color characters
   sed -e 's/\x1b\[[0-9;]*m//g' | \
 	# API URL
@@ -57,7 +58,7 @@ CLUSTER_API=$(oc cluster-info | \
 
 # If any cluster_id was introduced by args, it will be query to the API
 if [[ $CLUSTER_ID == "" ]]; then
-  CLUSTER_ID="$(oc get clusterversion -o jsonpath='{.items[].spec.clusterID}{"\n"}')"
+  CLUSTER_ID="$(OC get clusterversion -o jsonpath='{.items[].spec.clusterID}{"\n"}')"
 fi
 
 
