@@ -1,41 +1,63 @@
 deployer:
   cluster:
     # Must be unique
-    clusterId: UNMANAGED_CLUSTER_ID
-    server: API-SERVER-URL
-    user: USERNAME
+    clusterId: infinity-cluster
+    server: https://api.cluster-b68h9.b68h9.sandbox631.opentlc.com:6443
+    user: admin
     # Must be valid at the moment we deploy the application
-    token: TOKEN
+    token: sha256~_PO2Wyq7wtyyIML83OsRxI3RplcQ68X_V3oO9Gv6JVA
   application:
-    name: APP
+    name: infinity
     namespaceMappingFormat: "%s-prod"
     namespaces:
-    - name: NS1
+    - name: campaign
       # If missing, the namespaceMappingFormat or the original name are applied
-      target: NEW-NS1
+      target: campaign1
       params:
-      - configMap: MAP-1
+      - configMap: openshift-service-ca.crt
         params:
-        - name: PARAM-1
+        - name: service-ca.crt
           value: VALUE-1
-        - name: "..."
-          value: "..."
-      - configMap: MAP-2
+      - configMap: campaignms-api-config
         params:
-        - name: PARAM-1
+        - name: DB_CONNECTION_URL
           value: VALUE-1
-        - name: "..."
-          value: "..."
       secrets:
-      - secret: SECRET-1
+      - secret: campaignmsdbsecret
         params:
-        - name: PARAM-1
+        - name: DB_PASS_ENCRYPTION_KEY
           value: VALUE-1
-        - name: "..."
-          value: "..."
-      - secret: SECRET-2
+        - name: PASSWORD
+          value: VALUE-1
+        - name: USER_NAME
+          value: VALUE-1
+    - name: arrangement
+      # If missing, the namespaceMappingFormat or the original name are applied
+      target: arrangement1
+      params:
+      - configMap: openshift-service-ca.crt
         params:
-        - name: PARAM-1
+        - name: service-ca.crt
           value: VALUE-1
-        - name: "..."
-          value: "..."
+      secrets:
+      - secret: arrangementdbsecret
+        params:
+        - name: DB_PASS_ENCRYPTION_KEY
+          value: VALUE-1
+        - name: PASSWORD
+          value: VALUE-1
+        - name: USER_NAME
+          value: VALUE-1
+    - name: adapterms
+      # If missing, the namespaceMappingFormat or the original name are applied
+      secrets:
+      - secret: adaptermsdbsecret
+        params:
+        - name: DB_PASS_ENCRYPTION_KEY
+          value: VALUE-1
+        - name: PASSWORD
+          value: VALUE-1
+        - name: USER_NAME
+          value: VALUE-1
+  
+      

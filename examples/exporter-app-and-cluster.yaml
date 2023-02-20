@@ -1,20 +1,33 @@
 exporter:
   cluster:
     # Must be unique
-    clusterId: UNIQUE-ID
-    server: API-SERVER-URL
+    clusterId: infinity-cluster
+    server: https://api.cluster-b68h9.b68h9.sandbox631.opentlc.com:6443
     # Must be valid at the moment we export the configuration
-    token: TOKEN
+    token: sha256~_PO2Wyq7wtyyIML83OsRxI3RplcQ68X_V3oO9Gv6JVA
   application:
-    name: APP
+    name: infinity
     namespaces:
-      - name: NS1
+      - name: campaign
         # No default values are generated for each of the following mandatory params
         mandatory-params:
           # Provide the name of one of the exported ConfigMaps
-          - configMap: MAP-1
+          - configMap: campaignms-api-config
             params:
               # Paramaters are given as a list of key names
-              - PARAM-1
-              - "..."
-              - PARAM-N
+              - DB_CONNECTION_URL
+          - configMap: openshift-service-ca.crt
+            params:
+              # Paramaters are given as a list of key names
+              - service-ca.crt
+      - name: arrangement
+        # No default values are generated for each of the following mandatory params
+        mandatory-params:
+          # Provide the name of one of the exported ConfigMaps
+          - configMap: openshift-service-ca.crt
+            params:
+              # Paramaters are given as a list of key names
+              - service-ca.crt
+      - name: adapterms
+        # No default values are generated for each of the following mandatory params
+        mandatory-params: []
