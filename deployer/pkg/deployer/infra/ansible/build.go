@@ -1,4 +1,4 @@
-package builder
+package ansible
 
 import (
 	"github.com/RHEcosystemAppEng/SaaSi/deployer/pkg/config"

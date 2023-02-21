@@ -25,6 +25,8 @@ func main() {
 			reflect.ValueOf(clusterConfig.Token).IsZero() &&
 			reflect.ValueOf(clusterConfig.User).IsZero(){
 			deployApp = false
+			infraContext := context.InitInfraContext()
+
 		}
 	}
 	 if deployApp {
