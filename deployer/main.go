@@ -17,11 +17,10 @@ func main() {
 	// Unmarshal deployer config and get cluster and application configs
 	var deployApp bool = true
  	componentConfig := config.InitDeployerConfig()
-	//if config.ClusterConfig{}.Server != ""
 	clusterConfig := componentConfig.ClusterConfig
 	//Check if a cluster has been requested
 	if !reflect.ValueOf(clusterConfig).IsZero(){
-		// If there is no existing cluster, need to provision a new one, and delays to deploy the application now
+		// If there is no existing cluster, need to provision a new one, and postpone the deployment of the application to when the cluster will be ready.
         if reflect.ValueOf(clusterConfig.Server).IsZero() &&
 			reflect.ValueOf(clusterConfig.Token).IsZero() &&
 			reflect.ValueOf(clusterConfig.User).IsZero(){
@@ -54,5 +53,9 @@ func main() {
 		} else {
 			log.Println("No application to deploy")
 		}
+		//Need to wait for Cluster to be provisioned
+	 } else {
+		 log.Println("Mock application deployment after cluster provisioning")
 	 }
+
 }

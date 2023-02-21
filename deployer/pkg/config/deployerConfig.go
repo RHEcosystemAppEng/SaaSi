@@ -50,13 +50,13 @@ type AwsSettings struct {
 }
 
 type ClusterParams struct {
-	ClusterName       string `yaml:"CLUSTER_NAME",omitempty`
-	ClusterBaseDomain string `yaml:"CLUSTER_BASE_DOMAIN",omitempty`
-	WorkerCount       string `yaml:"WORKER_COUNT",omitempty`
-	ClusterVersion    string `yaml:"CLUSTER_VERSION",omitempty`
-	ClusterNetwork    string `yaml:"CLUSTER_NETWORK",omitempty`
-	HostPrefix        string `yaml:"HOST_PREFIX",omitempty`
-	ServiceNetwork    string `yaml:"SERVICE_NETWORK",omitempty`
+	ClusterName       			string `yaml:"CLUSTER_NAME",omitempty`
+	ClusterBaseDomain 			string `yaml:"CLUSTER_BASE_DOMAIN",omitempty`
+	WorkerCount       			string `yaml:"WORKER_COUNT",omitempty`
+	ClusterVersion    			string `yaml:"CLUSTER_VERSION",omitempty`
+	ClusterNetwork   		    string `yaml:"CLUSTER_NETWORK",omitempty`
+	HostPrefix      			string `yaml:"HOST_PREFIX",omitempty`
+	ServiceNetwork 			    string `yaml:"SERVICE_NETWORK",omitempty`
 	NetworkType      		    string `yaml:"NETWORK_TYPE",omitempty`
 	RegistryRouteHostname       string `yaml:"REGISTRY_ROUTE_HOSTNAME",omitempty`
 	RegistryIsExposed           string `yaml:"REGISTRY_IS_EXPOSED",omitempty`

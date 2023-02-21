@@ -49,7 +49,7 @@ func ConnectToCluster(clusterConfig config.ClusterConfig) *KubeConnection {
 	// generate kube config
 	conn.generateKubeConfiguration()
 
-	// discover supportd resources in the api server
+	// discover supported resources in the api server
 	discoveryClient, err = discovery.NewDiscoveryClientForConfig(conn.KubeConfig)
 	if err != nil {
 		log.Fatalf("Cannot connect to given cluster: %s", err)
