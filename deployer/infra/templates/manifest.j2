@@ -14,11 +14,11 @@ cluster:
     {{ PROV_CLOUD_PROVIDER | lower }}:
       profile: # Values defined in ansible vault secret (MANDATORY)
         {%- if PROV_CLOUD_PROVIDER | lower == 'aws' %}
-        {%- raw %}
+    {#    {%- raw %}#}
         aws_account_name: "{{ aws_account_name }}"
         aws_access_key_id: "{{ aws_access_key_id }}"
         aws_secret_access_key: "{{ aws_secret_access_key }}"
-        {%- endraw %}
+     {#   {%- endraw %} #}
         {%- endif %}
   {%- endif %}
 
