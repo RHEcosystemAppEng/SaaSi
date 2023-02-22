@@ -6,5 +6,5 @@ type PlayBookResults struct {
 }
 
 type PlaybookRunner interface {
-	run(pathToPlaybook string, pathToParametersFile string)  PlayBookResults
+	Run()  PlayBookResults
 }

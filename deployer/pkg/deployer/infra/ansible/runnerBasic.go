@@ -8,7 +8,7 @@ import (
 
 const PlaybookRunnerProg = "ansible-playbook"
 
-func (playbook Playbook) run(pathToPlaybook string, pathToParametersFile string) PlayBookResults {
+func (playbook Playbook) Run() PlayBookResults {
 
 	_, err := exec.LookPath(PlaybookRunnerProg)
 	if err != nil {
@@ -16,14 +16,14 @@ func (playbook Playbook) run(pathToPlaybook string, pathToParametersFile string)
 		return PlayBookResults{}
 	}
 	// run playbook
-	playbookInvocation := exec.Command(PlaybookRunnerProg, "--extra-vars", path.Join("@", playbook.renderedTemplatePath), playbook.path)
+	playbookInvocation := exec.Command(PlaybookRunnerProg, "--extra-vars", path.Join("@", playbook.RenderedTemplatePath), playbook.Path)
 	output, err := playbookInvocation.Output()
 
 	if err != nil {
-		log.Fatalf("Failed to invoke playbook %s , Detailed Error : %s", playbook.name , err)
+		log.Fatalf("Failed to invoke playbook %s , Detailed Error : %s", playbook.Name, err)
 		return PlayBookResults{}
 	}
 	log.Printf("The output of the playbook run is : \n %s",string(output))
 
-
+	return PlayBookResults{}
 }

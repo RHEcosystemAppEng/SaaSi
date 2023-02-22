@@ -6,6 +6,7 @@ import (
 	"github.com/RHEcosystemAppEng/SaaSi/deployer/pkg/context"
 	"github.com/RHEcosystemAppEng/SaaSi/deployer/pkg/deployer/app/deployer"
 	"github.com/RHEcosystemAppEng/SaaSi/deployer/pkg/deployer/app/packager"
+	"github.com/RHEcosystemAppEng/SaaSi/deployer/pkg/deployer/infra/provisioner"
 	"github.com/RHEcosystemAppEng/SaaSi/deployer/pkg/utils"
 	"github.com/kr/pretty"
 	"log"
@@ -15,9 +16,17 @@ import (
 func main() {
 
 	// Unmarshal deployer config and get cluster and application configs
+
+
 	var deployApp bool = true
  	componentConfig := config.InitDeployerConfig()
 	clusterConfig := componentConfig.ClusterConfig
+	// connect to cluster
+	kubeConnection := connect.ConnectToCluster(clusterConfig)
+
+	// create deployer context to hold global variables
+	deployerContext := context.InitDeployerContext(componentConfig.FlagArgs, kubeConnection)
+
 	//Check if a cluster has been requested
 	if !reflect.ValueOf(clusterConfig).IsZero(){
 		// If there is no existing cluster, need to provision a new one, and postpone the deployment of the application to when the cluster will be ready.
@@ -26,17 +35,17 @@ func main() {
 			reflect.ValueOf(clusterConfig.User).IsZero(){
 			deployApp = false
 			infraContext := context.InitInfraContext()
+			NewClusterDetails := provisioner.ProvisionCluster(infraContext, &clusterConfig.Params, deployerContext.GetRootSourceDir())
+
+			log.Print("Successfully deployed a cluster")
+			log.Printf("returned details of clusters: %s" , NewClusterDetails)
+
 
 		}
 	}
 	 if deployApp {
 		pretty.Printf("Deploying the following configuration: \n%# v", componentConfig)
 
-		// connect to cluster
-		kubeConnection := connect.ConnectToCluster(clusterConfig)
-
-		// create deployer context to hold global variables
-		deployerContext := context.InitDeployerContext(componentConfig.FlagArgs, kubeConnection)
 
 		// check if application deployment has been requested
 		if !reflect.ValueOf(componentConfig.ApplicationConfig).IsZero() {

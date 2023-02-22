@@ -2,9 +2,9 @@ package ansible
 
 type Playbook struct{
 	// Name of playbook
-	name string
+	Name string
 	//Path to Playbook
-	path string
-	overrideParametersPath string
-	renderedTemplatePath string
+	Path string
+	OverrideParametersPath string
+	RenderedTemplatePath string
 }
