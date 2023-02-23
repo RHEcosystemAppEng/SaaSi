@@ -1,7 +1,10 @@
 package ansible
 
 type PlayBookResults struct {
-	results map[string]string
+	user string
+	password string
+	apiServer string
+	additionalFields map[string]string
 
 }
 

@@ -11,7 +11,7 @@ import (
 	"strings"
 )
 
-func ProvisionCluster(infraCtx *context.InfraContext, customParams *config.ClusterParams, sourceDirRoot string) ansible.PlayBookResults {
+func ProvisionCluster(infraCtx *context.InfraContext, customParams *config.ClusterParams, awsCredentials config.AwsSettings, sourceDirRoot string) ansible.PlayBookResults {
 	playbook := &ansible.Playbook{
 		Name:                   "test",
 		Path:                   path.Join(infraCtx.AnsiblePlaybookPath,"site.yaml"),
@@ -25,6 +25,7 @@ func ProvisionCluster(infraCtx *context.InfraContext, customParams *config.Clust
 
 	customParametersPath := playbook.BuildCustomParameters(*customParams, infraCtx.ScriptPath)
 	playbook.OverrideParametersPath = customParametersPath
+	playbook.OverrideParametersWithCustoms(awsCredentials)
 	playbook.RenderTemplate(infraCtx.ScriptPath,fullEnvFilePath,customParametersPath)
 	return playbook.Run()
 

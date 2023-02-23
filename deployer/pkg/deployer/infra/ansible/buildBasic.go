@@ -57,6 +57,7 @@ func (playbook Playbook ) RenderTemplate(pathToScript string, pathToEnvironmentF
 	command := exec.Command(pathToScript, "-s", pathToEnvironmentFile, "-c", pathToCustomEnvFile)
 	output, err := command.Output()
 	if err != nil {
+		log.Fatalf("Failed to render template of playbook, error : %s",err)
 		return
 	} else{
 		log.Printf("Successfully Rendered template of playbook, result of invocation : %s",string(output))
@@ -67,7 +68,9 @@ func (playbook Playbook ) RenderTemplate(pathToScript string, pathToEnvironmentF
 
 }
 
-func (playbook Playbook) OverrideParametersWithCustoms(params config.ClusterParams, params2 config.ClusterParams) (config.ClusterParams, bool) {
-
-   return config.ClusterParams{},true
+func (playbook Playbook) OverrideParametersWithCustoms(awsCredentials config.AwsSettings) () {
+   os.Setenv("aws_access_key_id",awsCredentials.AwsAccessKeyId)
+   os.Setenv("aws_secret_access_key",awsCredentials.AwsSecretAccessKey)
+   os.Setenv("aws_public_domain",awsCredentials.AwsPublicDomain)
+   os.Setenv("aws_account_name",awsCredentials.AwsAccountName)
 }

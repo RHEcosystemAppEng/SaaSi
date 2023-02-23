@@ -2,8 +2,11 @@ package ansible
 
 import (
 	"log"
+	"os"
 	"os/exec"
 	"path"
+	"path/filepath"
+	"strings"
 )
 
 const PlaybookRunnerProg = "ansible-playbook"
@@ -24,6 +27,26 @@ func (playbook Playbook) Run() PlayBookResults {
 		return PlayBookResults{}
 	}
 	log.Printf("The output of the playbook run is : \n %s",string(output))
+	// get admin adminPassword into variable
+	// calculate apiserver address
+	finalClusterName := os.Getenv("CLUSTER_NAME")
+	finalClusterBaseDomain := os.Getenv("CLUSTER_BASE_DOMAIN")
+	addressParts := []string{"api", finalClusterName, finalClusterBaseDomain}
+	apiServerAddress := strings.Join(addressParts, ".")
+	transportapiServerAddressPort := "https://" + apiServerAddress + ":6443"
+	adminPasswordFileLocation := filepath.Join(playbook.Path, "build", finalClusterName, finalClusterBaseDomain, "auth","kubeadmin-adminPassword")
+	passwordCommand := exec.Command("cat", adminPasswordFileLocation)
+	adminPassword, err := passwordCommand.Output()
+	if err != nil {
+		log.Fatalf("Failed to read adminPassword file , Detailed Error : %s",  err)
+		return PlayBookResults{}
+	}
 
-	return PlayBookResults{}
+	playbookResults := PlayBookResults{
+		user:             "kubeadmin",
+		password:         string(adminPassword),
+		apiServer:        transportapiServerAddressPort,
+		additionalFields: nil,
+	}
+	return playbookResults
 }

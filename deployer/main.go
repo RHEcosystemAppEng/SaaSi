@@ -22,7 +22,7 @@ func main() {
  	componentConfig := config.InitDeployerConfig()
 	clusterConfig := componentConfig.ClusterConfig
 	// connect to cluster
-	kubeConnection := connect.ConnectToCluster(clusterConfig)
+	kubeConnection := connect.ConnectToCluster(clusterConfig,true)
 
 	// create deployer context to hold global variables
 	deployerContext := context.InitDeployerContext(componentConfig.FlagArgs, kubeConnection)
@@ -35,11 +35,26 @@ func main() {
 			reflect.ValueOf(clusterConfig.User).IsZero(){
 			deployApp = false
 			infraContext := context.InitInfraContext()
-			NewClusterDetails := provisioner.ProvisionCluster(infraContext, &clusterConfig.Params, deployerContext.GetRootSourceDir())
+			NewClusterDetails := provisioner.ProvisionCluster(infraContext, &clusterConfig.Params,clusterConfig.Aws, deployerContext.GetRootSourceDir())
 
-			log.Print("Successfully deployed a cluster")
-			log.Printf("returned details of clusters: %s" , NewClusterDetails)
 
+			log.Printf("Successfully deployed a cluster, clusterId:  %s ",clusterConfig.ClusterId)
+			log.Printf("returned details of provisioned cluster with id : %s,  %s" ,clusterConfig.ClusterId, NewClusterDetails)
+			// If requested to deploy also the application on new cluster, then need to update kubeconfig with new details
+			if !reflect.ValueOf(componentConfig.ApplicationConfig).IsZero(){
+				
+				newClusterConfig := config.ClusterConfig{
+					Server:        "",
+					User:          "",
+					Token:         "",
+					FromClusterId: "",
+					ClusterId:     "",
+					Aws:           config.AwsSettings{},
+					Params:        config.ClusterParams{},
+				}
+				newClusterKubeConnection := connect.ConnectToCluster(newClusterConfig,false)
+				deployerContext.KubeConnection = newClusterKubeConnection
+			}
 
 		}
 	}

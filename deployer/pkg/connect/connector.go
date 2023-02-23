@@ -34,7 +34,7 @@ type KubeConnection struct {
 	KubeConfigPath string
 }
 
-func ConnectToCluster(clusterConfig config.ClusterConfig) *KubeConnection {
+func ConnectToCluster(clusterConfig config.ClusterConfig, authByToken bool) *KubeConnection {
 	// init kube connection
 	conn := KubeConnection{}
 
@@ -42,8 +42,14 @@ func ConnectToCluster(clusterConfig config.ClusterConfig) *KubeConnection {
 	conn.KubeConfig = &rest.Config{}
 
 	// set credentials in kube config
-	conn.KubeConfig.BearerToken = clusterConfig.Token
 	conn.KubeConfig.Host = clusterConfig.Server
+	if authByToken {
+    	conn.KubeConfig.BearerToken = clusterConfig.Token
+	} else
+	{
+		conn.KubeConfig.Password = clusterConfig.Token
+		conn.KubeConfig.Username = clusterConfig.User
+	}
 	conn.KubeConfig.Insecure = true
 
 	// generate kube config
