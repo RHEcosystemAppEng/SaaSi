@@ -1,9 +1,9 @@
 package context
 
 import (
+	"log"
 	"os"
 	"path"
-	"log"
 )
 
 const (
@@ -11,10 +11,10 @@ const (
 )
 
 type InfraContext struct {
-
 	ScriptPath          string
 	AnsiblePlaybookPath string
 	SourceClustersDir   string
+	InfraRootDir        string
 }
 
 func InitInfraContext() *InfraContext {
@@ -26,6 +26,7 @@ func InitInfraContext() *InfraContext {
 	ic := InfraContext{
 		ScriptPath:          path.Join(rootDir,"infra/parser.sh") ,
 		AnsiblePlaybookPath: path.Join(rootDir,"infra/playbook"),
+		InfraRootDir: path.Join(rootDir,"infra"),
 		SourceClustersDir: ClustersFolder,
 	}
 

@@ -28,7 +28,7 @@ func (playbook Playbook) BuildCustomParameters(customParams config.ClusterParams
 		log.Fatalf("Error creating yaml out of cluster Params %s, \n details: %s", customParams,err)
 		return ""
 	} else {
-		err := yaml.Unmarshal(yamlFile, params)
+		err := yaml.Unmarshal(yamlFile, &params)
 		if err != nil {
 			log.Fatalf("Error creating map out of cluster Params yaml %s, \n details: %s", params,err)
 			return ""
@@ -37,7 +37,10 @@ func (playbook Playbook) BuildCustomParameters(customParams config.ClusterParams
 	result := ""
 	writer := bufio.NewWriter(customEnvFile)
 	for key, value := range params {
-        result = result + "export " + key + "=" + value + "\n"
+		if value != ""{
+			os.Setenv(key, value)
+			result = result + "export " + key + "=" + value + "\n"
+		}
 	}
 	_, err = writer.WriteString(result)
 	if err != nil {
@@ -53,8 +56,9 @@ func (playbook Playbook) BuildCustomParameters(customParams config.ClusterParams
 
 }
 
-func (playbook Playbook ) RenderTemplate(pathToScript string, pathToEnvironmentFile string, pathToCustomEnvFile string) {
+func (playbook *Playbook) RenderTemplate(pathToScript string, pathToEnvironmentFile string, pathToCustomEnvFile string) {
 	command := exec.Command(pathToScript, "-s", pathToEnvironmentFile, "-c", pathToCustomEnvFile)
+	command.Dir = "infra"
 	output, err := command.Output()
 	if err != nil {
 		log.Fatalf("Failed to render template of playbook, error : %s",err)
@@ -64,7 +68,7 @@ func (playbook Playbook ) RenderTemplate(pathToScript string, pathToEnvironmentF
 	}
 
 	colonIndex := strings.LastIndexAny(string(output), ":")
-	playbook.RenderedTemplatePath = strings.Trim(string(output)[colonIndex+1:]," ")
+	playbook.RenderedTemplatePath = strings.Trim(string(output[colonIndex+1:])," \n")
 
 }
 
@@ -73,4 +77,27 @@ func (playbook Playbook) OverrideParametersWithCustoms(awsCredentials config.Aws
    os.Setenv("aws_secret_access_key",awsCredentials.AwsSecretAccessKey)
    os.Setenv("aws_public_domain",awsCredentials.AwsPublicDomain)
    os.Setenv("aws_account_name",awsCredentials.AwsAccountName)
+}
+
+func (playbook Playbook) ParseDefaultEnvFile(pathToEnvironmentFile string) {
+	readFile, err := os.Open(pathToEnvironmentFile)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+	fileScanner := bufio.NewScanner(readFile)
+
+	fileScanner.Split(bufio.ScanLines)
+
+	for fileScanner.Scan() {
+		line := fileScanner.Text()
+		omitExport := line[7:]
+		split2Array := strings.Split(omitExport, "=")
+		//Only if there is value need to set env
+		if split2Array[1] != "" {
+			os.Setenv(split2Array[0], split2Array[1])
+		}
+	}
+
+	readFile.Close()
 }

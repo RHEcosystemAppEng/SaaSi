@@ -6,6 +6,7 @@ import (
 	"github.com/RHEcosystemAppEng/SaaSi/deployer/pkg/deployer/infra/ansible"
 	"io/ioutil"
 	"log"
+	"os"
 	"path"
 	"path/filepath"
 	"strings"
@@ -21,12 +22,19 @@ func ProvisionCluster(infraCtx *context.InfraContext, customParams *config.Clust
 	inputClusterDirectory := filepath.Join(sourceDirRoot, infraCtx.SourceClustersDir)
 	//find env file in input clusters directory
 	envFilePath := findClusterEnvironmentFile(inputClusterDirectory)
-	fullEnvFilePath := filepath.Join(inputClusterDirectory, envFilePath)
-
-	customParametersPath := playbook.BuildCustomParameters(*customParams, infraCtx.ScriptPath)
+	workingDir, err := os.Getwd()
+	if err != nil {
+		log.Fatalf("Error getting current working directory in order to calculate full path of cluster environment file, Error : %s ", err)
+		return ansible.PlayBookResults{}
+	}
+	fullEnvFilePath := filepath.Join(workingDir,envFilePath)
+	playbook.ParseDefaultEnvFile(fullEnvFilePath)
+	customParametersPath := playbook.BuildCustomParameters(*customParams, infraCtx.InfraRootDir)
 	playbook.OverrideParametersPath = customParametersPath
 	playbook.OverrideParametersWithCustoms(awsCredentials)
 	playbook.RenderTemplate(infraCtx.ScriptPath,fullEnvFilePath,customParametersPath)
+	//Need full path for rendered Template
+	playbook.RenderedTemplatePath = filepath.Join(infraCtx.InfraRootDir,playbook.RenderedTemplatePath)
 	return playbook.Run()
 
 
@@ -42,8 +50,7 @@ func findClusterEnvironmentFile(inputClusterDirectory string) string {
 	var foundEnvFile bool = false
 	for _, file := range files {
 		if file.IsDir() {
-			pathToEnvFile += path.Join(pathToEnvFile, file.Name())
-			clusterRootPlusDir := filepath.Join(inputClusterDirectory, pathToEnvFile)
+			clusterRootPlusDir := filepath.Join(inputClusterDirectory, file.Name())
 			innerFiles, err := ioutil.ReadDir(clusterRootPlusDir)
 			if err != nil {
 				log.Fatalf("Error Failed to read env file from path %s, detailed error : \n %s", clusterRootPlusDir, err)
@@ -51,7 +58,7 @@ func findClusterEnvironmentFile(inputClusterDirectory string) string {
 			}
 			for _, innerFile := range innerFiles {
 				if !innerFile.IsDir() && strings.HasSuffix(innerFile.Name(), "env") {
-					pathToEnvFile += path.Join(pathToEnvFile, innerFile.Name())
+					pathToEnvFile = path.Join(clusterRootPlusDir, innerFile.Name())
 					foundEnvFile = true
 					break
 				}

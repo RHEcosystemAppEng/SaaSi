@@ -34,7 +34,8 @@ func (playbook Playbook) Run() PlayBookResults {
 	addressParts := []string{"api", finalClusterName, finalClusterBaseDomain}
 	apiServerAddress := strings.Join(addressParts, ".")
 	transportApiServerAddressPort := "https://" + apiServerAddress + ":6443"
-	adminPasswordFileLocation := filepath.Join(playbook.Path, "build", finalClusterName, finalClusterBaseDomain, "auth","kubeadmin-adminPassword")
+	playbookDir := filepath.Dir(playbook.Path)
+	adminPasswordFileLocation := filepath.Join(playbookDir, "build", finalClusterName, finalClusterBaseDomain, "auth","kubeadmin-adminPassword")
 	passwordCommand := exec.Command("cat", adminPasswordFileLocation)
 	adminPassword, err := passwordCommand.Output()
 	if err != nil {

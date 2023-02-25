@@ -17,15 +17,10 @@ func main() {
 
 	// Unmarshal deployer config and get cluster and application configs
 
-
-	var deployApp bool = true
+	authByToken := true
+	var deployApp bool = authByToken
  	componentConfig := config.InitDeployerConfig()
 	clusterConfig := componentConfig.ClusterConfig
-	// connect to cluster
-	kubeConnection := connect.ConnectToCluster(clusterConfig,true)
-
-	// create deployer context to hold global variables
-	deployerContext := context.InitDeployerContext(componentConfig.FlagArgs, kubeConnection)
 
 	//Check if a cluster has been requested
 	if !reflect.ValueOf(clusterConfig).IsZero(){
@@ -35,7 +30,7 @@ func main() {
 			reflect.ValueOf(clusterConfig.User).IsZero(){
 			deployApp = false
 			infraContext := context.InitInfraContext()
-			newClusterDetails := provisioner.ProvisionCluster(infraContext, &clusterConfig.Params,clusterConfig.Aws, deployerContext.GetRootSourceDir())
+			newClusterDetails := provisioner.ProvisionCluster(infraContext, &clusterConfig.Params,clusterConfig.Aws, componentConfig.FlagArgs.RootSourceDir)
 
 
 			log.Printf("Successfully deployed a cluster, clusterId:  %s ",clusterConfig.ClusterId)
@@ -43,24 +38,21 @@ func main() {
 			// If requested to deploy also the application on new cluster, then need to update kubeconfig with new details
 			if !reflect.ValueOf(componentConfig.ApplicationConfig).IsZero(){
 				
-				newClusterConfig := config.ClusterConfig{
-					Server:        newClusterDetails.ApiServer,
-					User:          newClusterDetails.User,
-					Token:         newClusterDetails.Password,
-					FromClusterId: "",
-					ClusterId:     clusterConfig.ClusterId,
-					Aws:           config.AwsSettings{},
-					Params:        config.ClusterParams{},
-				}
-				newClusterKubeConnection := connect.ConnectToCluster(newClusterConfig,false)
-				deployerContext.KubeConnection = newClusterKubeConnection
+				clusterConfig.Server = newClusterDetails.ApiServer
+				clusterConfig.User = newClusterDetails.User
+				clusterConfig.Token = newClusterDetails.Password
+				authByToken = false
 			}
 
 		}
 	}
 	 if deployApp {
 		pretty.Printf("Deploying the following configuration: \n%# v", componentConfig)
+		 // connect to cluster
+		 kubeConnection := connect.ConnectToCluster(clusterConfig, authByToken)
 
+		 // create deployer context to hold global variables
+		 deployerContext := context.InitDeployerContext(componentConfig.FlagArgs, kubeConnection)
 
 		// check if application deployment has been requested
 		if !reflect.ValueOf(componentConfig.ApplicationConfig).IsZero() {
