@@ -53,7 +53,7 @@ func ConnectToCluster(clusterConfig config.ClusterConfig, authByToken bool) *Kub
 	conn.KubeConfig.Insecure = true
 
 	// generate kube config
-	conn.generateKubeConfiguration()
+	conn.generateKubeConfiguration(authByToken)
 
 	// discover supported resources in the api server
 	discoveryClient, err = discovery.NewDiscoveryClientForConfig(conn.KubeConfig)
@@ -72,7 +72,7 @@ func ConnectToCluster(clusterConfig config.ClusterConfig, authByToken bool) *Kub
 	return &conn
 }
 
-func (conn *KubeConnection) generateKubeConfiguration() {
+func (conn *KubeConnection) generateKubeConfiguration(authByToken bool)  {
 
 	// define cluster configuration
 	clusters := make(map[string]*api.Cluster)
@@ -91,9 +91,19 @@ func (conn *KubeConnection) generateKubeConfiguration() {
 	}
 
 	// define auth info configuration
-	authinfos := make(map[string]*api.AuthInfo)
-	authinfos[DEFAULT_AUTH_INFO] = &api.AuthInfo{
-		Token: conn.KubeConfig.BearerToken,
+	var authinfos map[string]*api.AuthInfo
+	if authByToken {
+		authinfos = make(map[string]*api.AuthInfo)
+		authinfos[DEFAULT_AUTH_INFO] = &api.AuthInfo{
+			Token: conn.KubeConfig.BearerToken,
+		  }
+		  //otherwise, auth by basic authentication
+	} else {
+			authinfos = make(map[string]*api.AuthInfo)
+			authinfos[DEFAULT_AUTH_INFO] = &api.AuthInfo{
+				Username: conn.KubeConfig.Username,
+				Password: conn.KubeConfig.Password,
+		}
 	}
 
 	// define client config configuration

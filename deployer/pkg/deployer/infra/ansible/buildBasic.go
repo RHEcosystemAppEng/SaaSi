@@ -91,12 +91,14 @@ func (playbook Playbook) ParseDefaultEnvFile(pathToEnvironmentFile string) {
 
 	for fileScanner.Scan() {
 		line := fileScanner.Text()
+		if strings.Contains(line, "export"){
 		omitExport := line[7:]
 		split2Array := strings.Split(omitExport, "=")
 		//Only if there is value need to set env
 		if split2Array[1] != "" {
 			os.Setenv(split2Array[0], split2Array[1])
-		}
+	 	}
+	  }
 	}
 
 	readFile.Close()
