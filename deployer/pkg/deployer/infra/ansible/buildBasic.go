@@ -3,6 +3,7 @@ package ansible
 import (
 	"bufio"
 	"github.com/RHEcosystemAppEng/SaaSi/deployer/pkg/config"
+	"github.com/RHEcosystemAppEng/SaaSi/deployer/pkg/context"
 	"gopkg.in/yaml.v2"
 	"log"
 	"os"
@@ -56,9 +57,9 @@ func (playbook Playbook) BuildCustomParameters(customParams config.ClusterParams
 
 }
 
-func (playbook *Playbook) RenderTemplate(pathToScript string, pathToEnvironmentFile string, pathToCustomEnvFile string) {
+func (playbook *Playbook) RenderTemplate(pathToScript string, pathToEnvironmentFile string, pathToCustomEnvFile string, ctx *context.InfraContext) {
 	command := exec.Command(pathToScript, "-s", pathToEnvironmentFile, "-c", pathToCustomEnvFile)
-	command.Dir = "infra"
+	command.Dir = ctx.InfraRootDir
 	output, err := command.Output()
 	if err != nil {
 		log.Fatalf("Failed to render template of playbook, error : %s",err)

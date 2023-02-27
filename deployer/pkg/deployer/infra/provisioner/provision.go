@@ -32,7 +32,7 @@ func ProvisionCluster(infraCtx *context.InfraContext, customParams *config.Clust
 	customParametersPath := playbook.BuildCustomParameters(*customParams, infraCtx.InfraRootDir)
 	playbook.OverrideParametersPath = customParametersPath
 	playbook.OverrideParametersWithCustoms(awsCredentials)
-	playbook.RenderTemplate(infraCtx.ScriptPath,fullEnvFilePath,customParametersPath)
+	playbook.RenderTemplate(infraCtx.ScriptPath,fullEnvFilePath,customParametersPath,infraCtx)
 	//Need full path for rendered Template
 	playbook.RenderedTemplatePath = filepath.Join(infraCtx.InfraRootDir,playbook.RenderedTemplatePath)
 	return playbook.Run()
