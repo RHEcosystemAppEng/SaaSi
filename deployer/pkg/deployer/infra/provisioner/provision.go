@@ -4,17 +4,18 @@ import (
 	"github.com/RHEcosystemAppEng/SaaSi/deployer/pkg/config"
 	"github.com/RHEcosystemAppEng/SaaSi/deployer/pkg/context"
 	"github.com/RHEcosystemAppEng/SaaSi/deployer/pkg/deployer/infra/ansible"
+	"io"
 	"io/ioutil"
 	"log"
 	"os"
 	"path"
-	"path/filepath"
+	filepath "path/filepath"
 	"strings"
 )
 
 func ProvisionCluster(infraCtx *context.InfraContext, customParams *config.ClusterParams, awsCredentials config.AwsSettings, sourceDirRoot string) ansible.PlayBookResults {
 	playbook := &ansible.Playbook{
-		Name:                   "test",
+		Name:                   "ocp_lab_provisioner",
 		Path:                   path.Join(infraCtx.AnsiblePlaybookPath,"site.yaml"),
 		OverrideParametersPath: "",
 		RenderedTemplatePath:   "",
@@ -25,7 +26,7 @@ func ProvisionCluster(infraCtx *context.InfraContext, customParams *config.Clust
 	workingDir, err := os.Getwd()
 	if err != nil {
 		log.Fatalf("Error getting current working directory in order to calculate full path of cluster environment file, Error : %s ", err)
-		return ansible.PlayBookResults{}
+		//return ansible.PlayBookResults{}, errors.New("Failed Openning current working directory")
 	}
 	fullEnvFilePath := filepath.Join(workingDir,envFilePath)
 	playbook.ParseDefaultEnvFile(fullEnvFilePath)
@@ -35,9 +36,29 @@ func ProvisionCluster(infraCtx *context.InfraContext, customParams *config.Clust
 	playbook.RenderTemplate(infraCtx.ScriptPath,fullEnvFilePath,customParametersPath,infraCtx)
 	//Need full path for rendered Template
 	playbook.RenderedTemplatePath = filepath.Join(infraCtx.InfraRootDir,playbook.RenderedTemplatePath)
+	// Copy rendered input file to playbook directory and update renderedTemplatePath to this new location
+	playbook.RenderedTemplatePath = copyRenderedTemplateToPlaybookDir(playbook)
 	return playbook.Run()
 
+}
 
+func copyRenderedTemplateToPlaybookDir(playbook *ansible.Playbook) string {
+	src, err := os.Open(playbook.RenderedTemplatePath)
+	if err != nil {
+		log.Fatalf("Error -  Failed to open rendered template file from path %s, detailed error : \n %s", src, err)
+	}
+	defer src.Close()
+	renderedTemplateDestPath := filepath.Join(filepath.Dir(playbook.Path), "deployment.yaml")
+	dst, err := os.Create(renderedTemplateDestPath)
+	if err != nil {
+		log.Fatalf("Error -  Failed to create destination for Copying rendered template file from path %s to path %s, detailed error : \n %s", src, dst, err)
+	}
+	defer dst.Close()
+	_, err = io.Copy(dst, src)
+	if err != nil {
+		log.Fatalf("Error - Failed to to Copy rendered template file from path %s to path %s, detailed error : \n %s", src, dst, err)
+	}
+	return renderedTemplateDestPath
 }
 
 func findClusterEnvironmentFile(inputClusterDirectory string) string {

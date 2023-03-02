@@ -2,6 +2,7 @@ package deployer
 
 import (
 	"log"
+	"os"
 	"os/exec"
 
 	"github.com/RHEcosystemAppEng/SaaSi/deployer/pkg/deployer/app/packager"
@@ -18,8 +19,8 @@ func DeployApplication(pkg *packager.ApplicationPkg) {
 	utils.ValidateRequirements(utils.OC)
 
 	// deploy application target namespaces using oc cli
-	cmd := exec.Command("oc", "apply", "-f", ".", "--kubeconfig", pkg.DeployerContext.GetKubeConfigPath())
-	cmd.Dir = pkg.TargetNamespaceDir
+	cmd := exec.Command("oc", "apply", "-f", pkg.TargetNamespaceDir, "--kubeconfig", pkg.DeployerContext.GetKubeConfigPath())
+	cmd.Dir, _ = os.Getwd()
 	if err = cmd.Run(); err != nil {
 		log.Fatalf("Failed to deploy files from target namespace directory: %s, Error: %s", pkg.TargetNamespaceDir, err)
 	}

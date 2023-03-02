@@ -18,17 +18,18 @@ func main() {
 	// Unmarshal deployer config and get cluster and application configs
 
 	authByToken := true
-	var deployApp bool = authByToken
+	var deployApp bool = true
  	componentConfig := config.InitDeployerConfig()
 	clusterConfig := componentConfig.ClusterConfig
-
+    var clusterProvisioned = false
+	var kubeConfigPath string = ""
 	//Check if a cluster has been requested
 	if !reflect.ValueOf(clusterConfig).IsZero(){
 		// If there is no existing cluster, need to provision a new one, and postpone the deployment of the application to when the cluster will be ready.
         if reflect.ValueOf(clusterConfig.Server).IsZero() &&
 			reflect.ValueOf(clusterConfig.Token).IsZero() &&
 			reflect.ValueOf(clusterConfig.User).IsZero(){
-			deployApp = false
+			//deployApp = false
 			infraContext := context.InitInfraContext()
 			newClusterDetails := provisioner.ProvisionCluster(infraContext, &clusterConfig.Params,clusterConfig.Aws, componentConfig.FlagArgs.RootSourceDir)
 
@@ -36,12 +37,15 @@ func main() {
 			log.Printf("Successfully deployed a cluster, clusterId:  %s ",clusterConfig.ClusterId)
 			log.Printf("returned details of provisioned cluster with id : %s,  %s" ,clusterConfig.ClusterId, newClusterDetails)
 			// If requested to deploy also the application on new cluster, then need to update kubeconfig with new details
+
 			if !reflect.ValueOf(componentConfig.ApplicationConfig).IsZero(){
-				
+				clusterProvisioned = true
 				clusterConfig.Server = newClusterDetails.ApiServer
 				clusterConfig.User = newClusterDetails.User
 				clusterConfig.Token = newClusterDetails.Password
+				kubeConfigPath = newClusterDetails.KubeConfigPath
 				authByToken = false
+
 			}
 
 		}
@@ -50,9 +54,11 @@ func main() {
 		pretty.Printf("Deploying the following configuration: \n%# v", componentConfig)
 		 // connect to cluster
 		 kubeConnection := connect.ConnectToCluster(clusterConfig, authByToken)
-
 		 // create deployer context to hold global variables
 		 deployerContext := context.InitDeployerContext(componentConfig.FlagArgs, kubeConnection)
+		 if clusterProvisioned {
+			 deployerContext.KubeConnection.KubeConfigPath = kubeConfigPath
+		 }
 
 		// check if application deployment has been requested
 		if !reflect.ValueOf(componentConfig.ApplicationConfig).IsZero() {
