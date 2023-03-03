@@ -3,23 +3,16 @@ package app
 import (
 	"fmt"
 	"io/fs"
-	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
 	"strings"
 
 	"github.com/RHEcosystemAppEng/SaaSi/exporter/pkg/export/utils"
-	v1 "k8s.io/api/core/v1"
-	rbacV1 "k8s.io/api/rbac/v1"
-	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/cli-runtime/pkg/printers"
-	"k8s.io/client-go/kubernetes/scheme"
 )
 
 type Installer struct {
-	appContext            *AppContext
-	clusterRolesInspector *ClusterRolesInspector
+	appContext *AppContext
 
 	sccToBeReplacedByNS map[string][]SccForSA
 }
@@ -29,8 +22,8 @@ type SccForSA struct {
 	sccName            string
 }
 
-func NewInstallerFromConfig(appContext *AppContext, clusterRolesInspector *ClusterRolesInspector) *Installer {
-	installer := Installer{appContext: appContext, clusterRolesInspector: clusterRolesInspector}
+func NewInstallerFromConfig(appContext *AppContext) *Installer {
+	installer := Installer{appContext: appContext}
 
 	installer.sccToBeReplacedByNS = make(map[string][]SccForSA)
 	return &installer
@@ -51,19 +44,6 @@ func (i *Installer) BuildKustomizeInstaller() {
 				return e
 			}
 			if !d.IsDir() && filepath.Ext(d.Name()) == ".yaml" {
-				yfile, err := ioutil.ReadFile(path)
-				if err != nil {
-					log.Fatal(err)
-				}
-				decode := scheme.Codecs.UniversalDeserializer().Decode
-				obj, gKV, err := decode(yfile, nil, nil)
-				if err == nil {
-					if gKV.Kind == "ServiceAccount" {
-						serviceAccount := obj.(*v1.ServiceAccount)
-						i.handleServiceAccount(kustomization, ns.Name, serviceAccount)
-					}
-				}
-
 				// log.Printf("Moving %s to %s", d.Name(), kustomizeFolder)
 				os.Rename(path, filepath.Join(kustomizeFolder, d.Name()))
 				utils.AppendToFile(kustomization, fmt.Sprintf("\n  - %s", d.Name()))
@@ -159,96 +139,6 @@ func (i *Installer) createKustomizeTemplate() {
 					"      index: 2\n"
 				utils.AppendToFile(templateKustomization, text, sccForSA.serviceAccountName, sccForSA.sccName)
 			}
-		}
-	}
-
-}
-
-func (i *Installer) handleServiceAccount(kustomization string, namespace string, serviceAccount *v1.ServiceAccount) {
-	log.Printf("Handling ServiceAccount %s", serviceAccount.Name)
-
-	clusterRoleBindings := i.clusterRolesInspector.ClusterRoleBindingsForSA(namespace, serviceAccount.Name)
-
-	for _, clusterRoleBinding := range clusterRoleBindings {
-		// TODO: update CRB name
-		yamlFile := fmt.Sprintf("%s-%s.yaml", "ClusterRoleBinding", clusterRoleBinding.Name)
-		yamlPath := filepath.Join(i.appContext.BaseKustomizeFolderForNS(namespace), yamlFile)
-
-		clusterRoleBindingSpec := rbacV1.ClusterRoleBinding{
-			// TODO: These two are not collected by client-go API
-			TypeMeta: metaV1.TypeMeta{
-				APIVersion: "rbac.authorization.k8s.io/v1",
-				Kind:       "ClusterRoleBinding",
-			},
-			ObjectMeta: metaV1.ObjectMeta{
-				Name: clusterRoleBinding.Name,
-			},
-			RoleRef: rbacV1.RoleRef{
-				Kind: clusterRoleBinding.RoleRef.Kind,
-				Name: clusterRoleBinding.RoleRef.Name,
-				// Do not copy the original namespace, will be overriden at install time
-			},
-			// TODO: API Group
-			Subjects: []rbacV1.Subject{},
-		}
-		for _, subject := range clusterRoleBinding.Subjects {
-			clusterRoleBindingSpec.Subjects = append(clusterRoleBindingSpec.Subjects, rbacV1.Subject{
-				Kind:      subject.Kind,
-				Name:      subject.Name,
-				Namespace: subject.Namespace,
-			})
-			// TODO: API Group
-		}
-
-		log.Printf("Creating YAML %s for ClusterRoleBinding %s to assign role %s to ServiceAccount %s", yamlFile,
-			clusterRoleBindingSpec.Name, clusterRoleBindingSpec.RoleRef.Name, serviceAccount.Name)
-		newFile, err := os.Create(yamlPath)
-		if err != nil {
-			log.Fatal(err)
-		}
-		y := printers.YAMLPrinter{}
-		defer newFile.Close()
-		if err = y.PrintObj(&clusterRoleBindingSpec, newFile); err != nil {
-			log.Fatal(err)
-		}
-
-		utils.AppendToFile(kustomization, fmt.Sprintf("\n  - %s", yamlFile))
-	}
-
-	sccs := i.clusterRolesInspector.SecurityContextConstraintsForSA(namespace, serviceAccount.Name)
-	systemName := utils.SystemNameForSA(namespace, serviceAccount.Name)
-	for _, scc := range sccs {
-		// Temporary solution
-		// Create a copy of the original SCC, rename it top match the SA and connect to this SA only
-		// Final solution is:
-		// 1- to avoid such cases and use CRB and SCC instead
-		// 2- to avoid such cases and use CRB and CR instead
-		sccCopy := scc.DeepCopy()
-		sccCopy.Name = fmt.Sprintf("%s-%s", scc.Name, serviceAccount.Name)
-		sccCopy.Users = []string{systemName}
-
-		yamlFile := fmt.Sprintf("%s-%s.yaml", "SecurityContextConstraints", sccCopy.Name)
-		yamlPath := filepath.Join(i.appContext.BaseKustomizeFolderForNS(namespace), yamlFile)
-
-		log.Printf("Creating YAML %s for SecurityContextConstraints %s to assign to ServiceAccount %s", yamlFile,
-			sccCopy.Name, serviceAccount.Name)
-		newFile, err := os.Create(yamlPath)
-		if err != nil {
-			log.Fatal(err)
-		}
-		y := printers.YAMLPrinter{}
-		defer newFile.Close()
-		if err = y.PrintObj(sccCopy, newFile); err != nil {
-			log.Fatal(err)
-		}
-
-		utils.AppendToFile(kustomization, fmt.Sprintf("\n  - %s", yamlFile))
-
-		sccForSA := SccForSA{serviceAccountName: serviceAccount.Name, sccName: sccCopy.Name}
-		if sccsForSA, ok := i.sccToBeReplacedByNS[namespace]; ok {
-			sccsForSA = append(sccsForSA, sccForSA)
-		} else {
-			i.sccToBeReplacedByNS[namespace] = []SccForSA{sccForSA}
 		}
 	}
 }
