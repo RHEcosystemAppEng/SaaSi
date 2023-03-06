@@ -12,8 +12,7 @@ import (
 	"strings"
 )
 
-
-
+// BuildCustomParameters This Function gets the input customParams , and set them as environment variables , and make an environment file , which each pair prefixed by "export" keyword.
 func (playbook Playbook) BuildCustomParameters(customParams config.ClusterParams,pathToBuild string) string {
 
 	fullFilePath := path.Join(pathToBuild, playbook.Name + "-" + "custom.env")
@@ -80,6 +79,8 @@ func (playbook Playbook) OverrideParametersWithCustoms(awsCredentials config.Aws
    os.Setenv("aws_account_name",awsCredentials.AwsAccountName)
 }
 
+// ParseDefaultEnvFile This function parse (key,value) pairs from environment file prefixed with "export", in order to set them as environment variables in this application,
+// and not only in script.
 func (playbook Playbook) ParseDefaultEnvFile(pathToEnvironmentFile string) {
 	readFile, err := os.Open(pathToEnvironmentFile)
 
