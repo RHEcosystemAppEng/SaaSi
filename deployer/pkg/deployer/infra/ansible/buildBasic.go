@@ -57,6 +57,8 @@ func (playbook Playbook) BuildCustomParameters(customParams config.ClusterParams
 }
 
 func (playbook *Playbook) RenderTemplate(pathToScript string, pathToEnvironmentFile string, pathToCustomEnvFile string, ctx *context.InfraContext) {
+	//Render template with Jinja template engine using shell script, according to environment variables that were set.
+	log.Print("About to render template to get configuration file to be passed to ansible playbook...")
 	command := exec.Command(pathToScript, "-s", pathToEnvironmentFile, "-c", pathToCustomEnvFile)
 	command.Dir = ctx.InfraRootDir
 	output, err := command.Output()

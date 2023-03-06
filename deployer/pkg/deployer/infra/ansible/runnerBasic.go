@@ -22,7 +22,7 @@ func (playbook Playbook) Run() PlayBookResults {
 	playbookInvocation := exec.Command(PlaybookRunnerProg, "--extra-vars=" + "deployment=" + filepath.Base(playbook.RenderedTemplatePath) , playbook.Path)
 	////playbookInvocation := exec.Command(PlaybookRunnerProg, "--extra-vars", "deployment=" ,path.Join("@", playbook.RenderedTemplatePath), playbook.Path)
 	playbookInvocation.Dir = playbookDir
-
+    log.Printf("About to run ansible playbook to install an Openshift Cluster with the requested Configuration...")
 	output, err := playbookInvocation.Output()
 
 	if err != nil  {

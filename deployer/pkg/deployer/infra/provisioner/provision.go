@@ -20,6 +20,7 @@ func ProvisionCluster(infraCtx *context.InfraContext, customParams *config.Clust
 		OverrideParametersPath: "",
 		RenderedTemplatePath:   "",
 	}
+	// get clusters directory for fetching them assembled default configuration from source cluster.
 	inputClusterDirectory := filepath.Join(sourceDirRoot, infraCtx.SourceClustersDir)
 	//find env file in input clusters directory
 	envFilePath := findClusterEnvironmentFile(inputClusterDirectory)
@@ -28,11 +29,18 @@ func ProvisionCluster(infraCtx *context.InfraContext, customParams *config.Clust
 		log.Fatalf("Error getting current working directory in order to calculate full path of cluster environment file, Error : %s ", err)
 		//return ansible.PlayBookResults{}, errors.New("Failed Openning current working directory")
 	}
+	//calculate full env file path
 	fullEnvFilePath := filepath.Join(workingDir,envFilePath)
+
+
 	playbook.ParseDefaultEnvFile(fullEnvFilePath)
+
 	customParametersPath := playbook.BuildCustomParameters(*customParams, infraCtx.InfraRootDir)
 	playbook.OverrideParametersPath = customParametersPath
+
 	playbook.OverrideParametersWithCustoms(awsCredentials)
+
+	//Render template according to environment variables that were set.
 	playbook.RenderTemplate(infraCtx.ScriptPath,fullEnvFilePath,customParametersPath,infraCtx)
 	//Need full path for rendered Template
 	playbook.RenderedTemplatePath = filepath.Join(infraCtx.InfraRootDir,playbook.RenderedTemplatePath)
