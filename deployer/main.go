@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"github.com/RHEcosystemAppEng/SaaSi/deployer/pkg/config"
 	"github.com/RHEcosystemAppEng/SaaSi/deployer/pkg/connect"
 	"github.com/RHEcosystemAppEng/SaaSi/deployer/pkg/context"
@@ -31,12 +32,18 @@ func main() {
 			reflect.ValueOf(clusterConfig.User).IsZero(){
 			//deployApp = false
 			infraContext := context.InitInfraContext()
-			log.Printf("About to deploy a cluster, clusterId:  %s , with following configuration \n %s",clusterConfig.ClusterId, clusterConfig.Params)
+			beautifiedConfig, err := json.MarshalIndent(clusterConfig.Params, "", "   ")
+			if err != nil {
+				return
+			}
+
+			log.Printf("About to deploy a cluster, clusterId:  %s , with following configuration (Every field that is not populated will be defaulted from source cluster): \n" , clusterConfig.ClusterId)
+			pretty.Printf("%s \n",string(beautifiedConfig))
 			newClusterDetails := provisioner.ProvisionCluster(infraContext, &clusterConfig.Params,clusterConfig.Aws, componentConfig.FlagArgs.RootSourceDir)
 
 
 			log.Printf("Successfully deployed a cluster, clusterId:  %s ",clusterConfig.ClusterId)
-			log.Printf("returned details of provisioned cluster with id : %s,  %s" ,clusterConfig.ClusterId, newClusterDetails)
+			log.Printf("returned details of provisioned cluster with id : %s,  %+v\n" ,clusterConfig.ClusterId, newClusterDetails)
 			// If requested to deploy also the application on new cluster, then need to update kubeconfig with new details
 
 			if !reflect.ValueOf(componentConfig.ApplicationConfig).IsZero(){
