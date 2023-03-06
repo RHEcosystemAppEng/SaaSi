@@ -59,7 +59,7 @@ cluster:
 
     controlPlane:
       name: master
-      replicas: 3
+      replicas: {{ MASTER_COUNT }}
 
     compute:
       - name: worker

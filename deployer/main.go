@@ -31,6 +31,7 @@ func main() {
 			reflect.ValueOf(clusterConfig.User).IsZero(){
 			//deployApp = false
 			infraContext := context.InitInfraContext()
+			log.Printf("About to deploy a cluster, clusterId:  %s , with following configuration \n %s",clusterConfig.ClusterId, clusterConfig.Params)
 			newClusterDetails := provisioner.ProvisionCluster(infraContext, &clusterConfig.Params,clusterConfig.Aws, componentConfig.FlagArgs.RootSourceDir)
 
 
@@ -39,6 +40,7 @@ func main() {
 			// If requested to deploy also the application on new cluster, then need to update kubeconfig with new details
 
 			if !reflect.ValueOf(componentConfig.ApplicationConfig).IsZero(){
+				log.Print("Applying new Cluster address and Credentials , and kubeconfig file to be used by application deployment")
 				clusterProvisioned = true
 				clusterConfig.Server = newClusterDetails.ApiServer
 				clusterConfig.User = newClusterDetails.User
