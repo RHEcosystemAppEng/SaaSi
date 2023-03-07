@@ -61,7 +61,7 @@ type ClusterParams struct {
 	RegistryRouteHostname       string `yaml:"REGISTRY_ROUTE_HOSTNAME",omitempty`
 	RegistryIsExposed           string `yaml:"REGISTRY_IS_EXPOSED",omitempty`
 	ProvCloudProvider           string `yaml:"PROV_CLOUD_PROVIDER",omitempty`
-	ProvCloudRegion             string `yaml:"PROV_CLOUD_Region",omitempty`
+	ProvCloudRegion             string `yaml:"PROV_CLOUD_REGION",omitempty`
 	MasterCount       			string `yaml:"MASTER_COUNT",omitempty`
 
 

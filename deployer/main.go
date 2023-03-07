@@ -19,8 +19,8 @@ func main() {
 	// Unmarshal deployer config and get cluster and application configs
 
 	authByToken := true
-	var deployApp bool = true
  	componentConfig := config.InitDeployerConfig()
+	pretty.Printf("Deploying the following configuration: \n%# v", componentConfig)
 	clusterConfig := componentConfig.ClusterConfig
     var clusterProvisioned = false
 	var kubeConfigPath string = ""
@@ -59,21 +59,17 @@ func main() {
 
 		}
 	}
-	 if deployApp {
-		pretty.Printf("Deploying the following configuration: \n%# v", componentConfig)
-		 // connect to cluster
-		 kubeConnection := connect.ConnectToCluster(clusterConfig, authByToken)
-		 // create deployer context to hold global variables
-		 deployerContext := context.InitDeployerContext(componentConfig.FlagArgs, kubeConnection)
-		 if clusterProvisioned {
-			 deployerContext.KubeConnection.KubeConfigPath = kubeConfigPath
-		 }
-
+	 // connect to cluster
+	 kubeConnection := connect.ConnectToCluster(clusterConfig, authByToken)
+	 // create deployer context to hold global variables
+	 deployerContext := context.InitDeployerContext(componentConfig.FlagArgs, kubeConnection)
+	 if clusterProvisioned {
+		 deployerContext.KubeConnection.KubeConfigPath = kubeConfigPath
+	 }
 		// check if application deployment has been requested
-		if !reflect.ValueOf(componentConfig.ApplicationConfig).IsZero() {
-
+	 if !reflect.ValueOf(componentConfig.ApplicationConfig).IsZero() {
 			// create application deployment package
-			applicationPkg := packager.NewApplicationPkg(componentConfig.ApplicationConfig, deployerContext)
+		applicationPkg := packager.NewApplicationPkg(componentConfig.ApplicationConfig, deployerContext)
 
 			// check if all mandatory variables have been set, else list unset vars and throw exception
 			if len(applicationPkg.UnsetMandatoryParams) > 0 {
@@ -87,8 +83,5 @@ func main() {
 			log.Println("No application to deploy")
 		}
 		//Need to wait for Cluster to be provisioned
-	 } else {
-		 log.Println("Mock application deployment after cluster provisioning")
-	 }
 
 }
