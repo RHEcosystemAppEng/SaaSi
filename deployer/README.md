@@ -4,6 +4,20 @@ A Golang CLI tool to deploy configurations extracted from a live OpenShit/Kubern
 ## Dependencies
 * Use [kustomize](konveyor.io/tools/crane/) to export the original configuration and remove cluster specific settings
   (e.g. IP addresses, status, ...)
+* Need [Ansible](https://docs.ansible.com/ansible/latest/installation_guide/intro_installation.html) installed in order to run playbook to Provision an OCP Cluster on AWS.
+* Need [Jinja](https://pypi.org/project/Jinja2/) template engine Binary in order to render template that will become yaml parameters file of the ansible playbook.
+* Need [htpasswd](https://command-not-found.com/htpasswd) util in order to define identity provider in OCP cluster
+* need [Openshift Cli Tool](https://console.redhat.com/openshift/downloads)
+* The deployer dependent on Ansible playbook to provision the cluster, so before running the deployer with the option to provision a new cluster enabled, run the following command from root directory of repo:
+```shell
+git submodule add git@github.com:RHEcosystemAppEng/ocp_labs_provisioner.git deployer/infra/playbook
+```
+Note: If you're not sure if you're at the top level of the git repo or not, just run the following two commands:
+```shell
+pwd
+git rev-parse --show-toplevel
+```
+the two commands will bring the same directory only if you're in root directory of repo.
 
 ## Installer configuration
 The `deployer` runs using a configuration to specify how to install the packaged configuration:
@@ -108,4 +122,8 @@ Available options:
 
 ## Open points
 * Which user permissions are needed to install
+* Need to propagate logs of openshift installer to console output of deployer application , to bring an enhanced user experience.
+* Need to add an optional lifecycle hook, that will be placed at the point of time that is between provisioning the cluster and deploying the application , that its implementation will be provided by user, this will give the user an option to deploy dependencies in a form of script location, that will be passed as command line argument - This script will take care of installing all the dependencies that weren't migrated from source cluster( for example, kafka cluster, databases, etc).
+* 
+
 
