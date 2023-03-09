@@ -25,16 +25,13 @@ func NewAppExporterFromConfig(config *config.Config, connectionStatus *connect.C
 }
 
 func (e *AppExporter) Export() {
-	clusterRolesInspector := NewClusterRolesInspector(e.appContext)
-	clusterRolesInspector.LoadClusterRoles()
-
 	e.PrepareOutput()
 	e.ExportWithCrane()
 
 	parametrizer := NewParametrizerFromConfig(e.appContext)
 	parametrizer.ExposeParameters()
 
-	installer := NewInstallerFromConfig(e.appContext, clusterRolesInspector)
+	installer := NewInstallerFromConfig(e.appContext)
 	installer.BuildKustomizeInstaller()
 }
 
@@ -79,6 +76,8 @@ func doExport(kubeConfigPath string, namespace string, exportFolder string) {
 		ErrOut: os.Stderr,
 	}, nil)
 
+	clusterScopedRbac := exportCmd.Flags().Lookup("cluster-scoped-rbac")
+	clusterScopedRbac.Value.Set("true")
 	exportNamespace := exportCmd.Flags().Lookup("namespace")
 	exportNamespace.Value.Set(namespace)
 	exportDir := exportCmd.Flags().Lookup("export-dir")
