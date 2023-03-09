@@ -8,8 +8,10 @@ import (
 
 func main() {
 	config := config.ReadConfig()
-	pretty.Printf("Export configuration %# v", config)
+	pretty.Printf("Runtime configuration %# v", config)
+	exporterConfig := config.ReadExporterConfig()
+	pretty.Printf("Export configuration %# v", exporterConfig)
 
 	exporter := export.NewExporterFromConfig(config)
-	exporter.Export()
+	exporter.Export(exporterConfig)
 }

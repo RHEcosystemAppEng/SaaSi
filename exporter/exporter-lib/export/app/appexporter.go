@@ -18,8 +18,8 @@ type AppExporter struct {
 	appContext *AppContext
 }
 
-func NewAppExporterFromConfig(config *config.Config, connectionStatus *connect.ConnectionStatus) *AppExporter {
-	exporter := AppExporter{appContext: NewAppContextFromConfig(config, connectionStatus)}
+func NewAppExporterFromConfig(config *config.Config, exporterConfig *config.ExporterConfig, connectionStatus *connect.ConnectionStatus) *AppExporter {
+	exporter := AppExporter{appContext: NewAppContextFromConfig(config, exporterConfig, connectionStatus)}
 
 	return &exporter
 }
