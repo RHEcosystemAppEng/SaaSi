@@ -28,8 +28,8 @@ type AppContext struct {
 	AppFolder string
 }
 
-func NewAppContextFromConfig(config *config.Config, connectionStatus *connect.ConnectionStatus) *AppContext {
-	appContext := AppContext{AppConfig: &config.Exporter.Application}
+func NewAppContextFromConfig(config *config.Config, exporterConfig *config.ExporterConfig, connectionStatus *connect.ConnectionStatus) *AppContext {
+	appContext := AppContext{AppConfig: &exporterConfig.Application}
 
 	appContext.InitFromConfig(config, connectionStatus)
 	appContext.AppFolder = filepath.Join(appContext.OutputFolder, ApplicationsFolder, appContext.AppConfig.Name)

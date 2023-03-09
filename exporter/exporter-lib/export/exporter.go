@@ -20,14 +20,14 @@ func NewExporterFromConfig(config *config.Config) *Exporter {
 	return &exporter
 }
 
-func (e *Exporter) Export() {
-	connectionStatus := connect.ConnectCluster(&e.config.Exporter.Cluster)
+func (e *Exporter) Export(exporterConfig *config.ExporterConfig) {
+	connectionStatus := connect.ConnectCluster(&exporterConfig.Cluster)
 	if connectionStatus.Error != nil {
 		log.Fatalf("Cannot connect to given cluster: %s", connectionStatus.Error)
 	}
 
-	e.infraExporter = infra.NewInfraExporterFromConfig(e.config, connectionStatus)
-	e.appExporter = app.NewAppExporterFromConfig(e.config, connectionStatus)
+	e.infraExporter = infra.NewInfraExporterFromConfig(e.config, exporterConfig, connectionStatus)
+	e.appExporter = app.NewAppExporterFromConfig(e.config, exporterConfig, connectionStatus)
 
 	e.infraExporter.Export()
 	e.appExporter.Export()

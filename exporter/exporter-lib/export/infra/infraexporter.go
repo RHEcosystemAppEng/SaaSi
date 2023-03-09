@@ -10,8 +10,8 @@ type InfraExporter struct {
 	infraContext *InfraContext
 }
 
-func NewInfraExporterFromConfig(config *config.Config, connectionStatus *connect.ConnectionStatus) *InfraExporter {
-	exporter := InfraExporter{infraContext: NewInfraContextFromConfig(config, connectionStatus)}
+func NewInfraExporterFromConfig(config *config.Config, exporterConfig *config.ExporterConfig, connectionStatus *connect.ConnectionStatus) *InfraExporter {
+	exporter := InfraExporter{infraContext: NewInfraContextFromConfig(config, exporterConfig, connectionStatus)}
 
 	return &exporter
 }
