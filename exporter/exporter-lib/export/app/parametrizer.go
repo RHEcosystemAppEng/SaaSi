@@ -10,7 +10,7 @@ import (
 
 	api "github.com/openshift/api"
 
-	"github.com/RHEcosystemAppEng/SaaSi/exporter/pkg/export/utils"
+	"github.com/RHEcosystemAppEng/SaaSi/exporter/exporter-lib/export/utils"
 	"golang.org/x/exp/slices"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -53,7 +53,8 @@ func (p *Parametrizer) ExposeParameters() {
 
 			obj, gKV, err := decode(yfile, nil, nil)
 			if err != nil {
-				log.Fatal(err)
+				fmt.Printf("Cannot decode %s to Kubernetes resource: %s", yfile, err.Error())
+				continue
 			} else {
 				if gKV.Kind == "ConfigMap" {
 					configMap := obj.(*v1.ConfigMap)

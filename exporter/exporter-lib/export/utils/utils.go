@@ -3,12 +3,14 @@ package utils
 import (
 	"bufio"
 	"bytes"
+	"embed"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"log"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 )
 
@@ -84,4 +86,49 @@ func AppendToFile(file string, text string, args ...any) {
 
 func SystemNameForSA(namespace string, serviceAccount string) string {
 	return fmt.Sprintf("system:serviceaccount:%s:%s", namespace, serviceAccount)
+}
+
+func CopyEmbedderFolderToTempDir(embedFolder embed.FS, folderName string) (string, error) {
+	tempDir, err := os.MkdirTemp("", folderName)
+	if err != nil {
+		return "", err
+	}
+
+	err = recursiveCopyEmbeddedFolderToTempDir(embedFolder, folderName, tempDir)
+	return tempDir, err
+}
+
+func recursiveCopyEmbeddedFolderToTempDir(embedFolder embed.FS, folderName string, tempDir string) error {
+	log.Printf("Copying embedded folder %s to: %s", folderName, tempDir)
+
+	files, err := embedFolder.ReadDir(folderName)
+	if err != nil {
+		return err
+	}
+	for _, f := range files {
+		if f.IsDir() {
+			log.Printf("Creating folder %s", f.Name())
+			folderName = filepath.Join(folderName, f.Name())
+			tempDir := filepath.Join(tempDir, f.Name())
+			os.Mkdir(tempDir, 0755)
+
+			recursiveCopyEmbeddedFolderToTempDir(embedFolder, folderName, tempDir)
+		} else {
+			log.Printf("Copying file %s", f.Name())
+			filePath := filepath.Join(folderName, f.Name())
+			content, err := embedFolder.ReadFile(filePath)
+			if err != nil {
+				log.Fatalf("Cannot read from %s: %s", filePath, err)
+				return err
+			}
+
+			destFile := filepath.Join(tempDir, f.Name())
+			if err = os.WriteFile(destFile, content, 0755); err != nil {
+				log.Fatalf("Cannot write %s: %s", destFile, err)
+				return err
+			}
+		}
+	}
+
+	return nil
 }

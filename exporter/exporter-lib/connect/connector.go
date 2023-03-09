@@ -4,7 +4,7 @@ import (
 	"io/ioutil"
 	"log"
 
-	"github.com/RHEcosystemAppEng/SaaSi/exporter/pkg/config"
+	"github.com/RHEcosystemAppEng/SaaSi/exporter/exporter-lib/config"
 	"k8s.io/apimachinery/pkg/version"
 	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/rest"
