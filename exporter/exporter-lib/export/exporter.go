@@ -3,10 +3,10 @@ package export
 import (
 	"log"
 
-	"github.com/RHEcosystemAppEng/SaaSi/exporter/pkg/config"
-	"github.com/RHEcosystemAppEng/SaaSi/exporter/pkg/connect"
-	"github.com/RHEcosystemAppEng/SaaSi/exporter/pkg/export/app"
-	"github.com/RHEcosystemAppEng/SaaSi/exporter/pkg/export/infra"
+	"github.com/RHEcosystemAppEng/SaaSi/exporter/exporter-lib/config"
+	"github.com/RHEcosystemAppEng/SaaSi/exporter/exporter-lib/connect"
+	"github.com/RHEcosystemAppEng/SaaSi/exporter/exporter-lib/export/app"
+	"github.com/RHEcosystemAppEng/SaaSi/exporter/exporter-lib/export/infra"
 )
 
 type Exporter struct {

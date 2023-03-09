@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/RHEcosystemAppEng/SaaSi/exporter/pkg/export/utils"
+	"github.com/RHEcosystemAppEng/SaaSi/exporter/exporter-lib/export/utils"
 )
 
 type Installer struct {
