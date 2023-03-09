@@ -1,8 +1,8 @@
 package main
 
 import (
-	config "github.com/RHEcosystemAppEng/SaaSi/exporter/pkg/config"
-	export "github.com/RHEcosystemAppEng/SaaSi/exporter/pkg/export"
+	config "github.com/RHEcosystemAppEng/SaaSi/exporter/exporter-lib/config"
+	export "github.com/RHEcosystemAppEng/SaaSi/exporter/exporter-lib/export"
 	"github.com/kr/pretty"
 )
 

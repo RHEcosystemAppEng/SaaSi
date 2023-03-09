@@ -3,9 +3,9 @@ package app
 import (
 	"path/filepath"
 
-	"github.com/RHEcosystemAppEng/SaaSi/exporter/pkg/config"
-	"github.com/RHEcosystemAppEng/SaaSi/exporter/pkg/connect"
-	"github.com/RHEcosystemAppEng/SaaSi/exporter/pkg/context"
+	"github.com/RHEcosystemAppEng/SaaSi/exporter/exporter-lib/config"
+	"github.com/RHEcosystemAppEng/SaaSi/exporter/exporter-lib/connect"
+	"github.com/RHEcosystemAppEng/SaaSi/exporter/exporter-lib/context"
 )
 
 const (

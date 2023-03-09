@@ -6,8 +6,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/RHEcosystemAppEng/SaaSi/exporter/pkg/config"
-	"github.com/RHEcosystemAppEng/SaaSi/exporter/pkg/connect"
+	"github.com/RHEcosystemAppEng/SaaSi/exporter/exporter-lib/config"
+	"github.com/RHEcosystemAppEng/SaaSi/exporter/exporter-lib/connect"
 	"k8s.io/client-go/rest"
 )
 
