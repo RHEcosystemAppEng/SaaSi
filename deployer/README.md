@@ -8,7 +8,19 @@ A Golang CLI tool to deploy configurations extracted from a live OpenShit/Kubern
 * Need [Jinja](https://pypi.org/project/Jinja2/) template engine Binary in order to render template that will become yaml parameters file of the ansible playbook.
 * Need [htpasswd](https://command-not-found.com/htpasswd) util in order to define identity provider in OCP cluster
 * need [Openshift Cli Tool](https://console.redhat.com/openshift/downloads)
+* Need to download a [pull secret](https://console.redhat.com/openshift/install/pull-secret) for the Openshift installer, and copy paste it into [manifest.j2](./infra/templates/manifest.j2) pullSecret key
+```yaml
+    {%- if PROV_CLOUD_PROVIDER != 'None' %}
+    platform:
+            {{ PROV_CLOUD_PROVIDER | lower }}:
+              region: "{{ PROV_CLOUD_REGION }}"
+        {%- endif %}
+
+    sshKey: ''
+    pullSecret: 'Paste Here between quotes'
+```
 * The deployer dependent on Ansible playbook to provision the cluster, so before running the deployer with the option to provision a new cluster enabled, run the following command from root directory of repo:
+
 ```shell
 git submodule add git@github.com:RHEcosystemAppEng/ocp_labs_provisioner.git deployer/infra/playbook
 ```
@@ -64,7 +76,85 @@ application:
           - name: "..."
             value: "..."
 ```
-
+## Deployer Configuration with Cluster Provisioning
+```yaml
+deployer:
+  cluster:
+    # Must be unique
+    clusterId: SAASI_DEMO_CLUSTER_ID
+    # These will be eventually put in a secured store (after MVP1)
+    # For MVP1 just store the AWS settings in a fixed vault/secret
+    aws:
+      aws_public_domain: fsi-partner.rhecoeng.com
+      aws_account_name: AWS_ACCOUNT_NAME
+      aws_access_key_id: CHANGEME
+      aws_secret_access_key: CHANGEME
+    params:
+      # All are optional - but needed to be overridden if values weren't exported 
+      # from source cluster or if extracted values from 
+      # the source cluster are not relevant for your AWS Account. 
+      # Anyway supplying CLUSTER_NAME is always recommended and sometimes mandatory.
+      CLUSTER_NAME: saasi-cluster
+      CLUSTER_BASE_DOMAIN: fsi-partner.rhecoeng.com
+      WORKER_COUNT: 3
+      MASTER_COUNT: 1
+      CLUSTER_VERSION: 4.10.0
+      PROV_CLOUD_REGION: eu-west-3
+      REGISTRY_ROUTE_HOSTNAME: openshift-registry.fsi-partner.rhecoeng.com
+  application:
+    name: infinity
+    namespaceMappingFormat: "%s-prod"
+    namespaces:
+    - name: campaign
+      # If missing, the namespaceMappingFormat or the original name are applied
+      target: campaign1
+      params:
+      - configMap: openshift-service-ca.crt
+        params:
+        - name: service-ca.crt
+          value: VALUE-1
+      - configMap: campaignms-api-config
+        params:
+        - name: DB_CONNECTION_URL
+          value: VALUE-1
+      secrets:
+      - secret: campaignmsdbsecret
+        params:
+        - name: DB_PASS_ENCRYPTION_KEY
+          value: VALUE-1
+        - name: PASSWORD
+          value: VALUE-1
+        - name: USER_NAME
+          value: VALUE-1
+    - name: arrangement
+      # If missing, the namespaceMappingFormat or the original name are applied
+      target: arrangement1
+      params:
+      - configMap: openshift-service-ca.crt
+        params:
+        - name: service-ca.crt
+          value: VALUE-1
+      secrets:
+      - secret: arrangementdbsecret
+        params:
+        - name: DB_PASS_ENCRYPTION_KEY
+          value: VALUE-1
+        - name: PASSWORD
+          value: VALUE-1
+        - name: USER_NAME
+          value: VALUE-1
+    - name: adapterms
+      # If missing, the namespaceMappingFormat or the original name are applied
+      secrets:
+      - secret: adaptermsdbsecret
+        params:
+        - name: DB_PASS_ENCRYPTION_KEY
+          value: VALUE-1
+        - name: PASSWORD
+          value: VALUE-1
+        - name: USER_NAME
+          value: VALUE-1
+```
 ## Running the installer
 Prerequisites:
 * Install `oc` and `kustomize` CLI tools
@@ -123,7 +213,7 @@ Available options:
 ## Open points
 * Which user permissions are needed to install
 * Need to propagate logs of openshift installer to console output of deployer application , to bring an enhanced user experience.
-* Need to add an optional lifecycle hook, that will be placed at the point of time that is between provisioning the cluster and deploying the application , that its implementation will be provided by user, this will give the user an option to deploy dependencies in a form of script location, that will be passed as command line argument - This script will take care of installing all the dependencies that weren't migrated from source cluster( for example, kafka cluster, databases, etc).
-* 
+* Need to add an optional lifecycle hook, that will be placed at the point of time that is between provisioning the cluster and deploying the application , that its implementation will be provided by user, this will give the user an option to deploy dependencies in a form of script location, that will be passed as command line argument - This script will take care of installing all the application' dependencies that weren't migrated from source cluster( for example, kafka cluster, databases, etc).
+* Need to add cluster config parameter to the input yaml file, of the pull secret value that will be injected into [manifest.yaml](./infra/templates/manifest.j2)  
 
 
