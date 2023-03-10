@@ -23,7 +23,7 @@ type Parametrizer struct {
 
 func NewParametrizerFromConfig(appContext *AppContext) *Parametrizer {
 	parametrizer := Parametrizer{appContext: appContext}
-	parametrizer.logger = appContext.Logger
+	parametrizer.logger = appContext.Logger()
 	return &parametrizer
 }
 

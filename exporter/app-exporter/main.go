@@ -9,6 +9,7 @@ import (
 
 	"github.com/RHEcosystemAppEng/SaaSi/exporter/exporter-lib/config"
 	"github.com/RHEcosystemAppEng/SaaSi/exporter/exporter-lib/export"
+	"github.com/RHEcosystemAppEng/SaaSi/exporter/exporter-lib/export/utils"
 	"github.com/gorilla/mux"
 	"github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v2"
@@ -32,7 +33,7 @@ var router = mux.NewRouter()
 func main() {
 	appExporter := AppExporter{}
 	appExporter.config = config.ReadConfigFromEnvVars()
-	appExporter.logger = appExporter.config.Logger
+	appExporter.logger = utils.GetLogger(appExporter.config.Debug)
 	appExporter.exporter = export.NewExporterFromConfig(appExporter.config)
 
 	appExporter.logger.Infof("Running %s with version %s", os.Args[0], BuildVersion)
@@ -42,9 +43,9 @@ func main() {
 
 	host := "0.0.0.0"
 	url := fmt.Sprintf("%s:%d", host, 8080)
-	appExporter.config.Logger.Infof("Starting listener as %s", url)
+	appExporter.logger.Infof("Starting listener as %s", url)
 	if err := http.ListenAndServe(url, router); err != nil {
-		appExporter.config.Logger.Fatal(err)
+		appExporter.logger.Fatal(err)
 	}
 }
 

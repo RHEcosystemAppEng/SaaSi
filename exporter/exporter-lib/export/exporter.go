@@ -25,7 +25,7 @@ type ExporterOutput struct {
 
 func NewExporterFromConfig(config *config.Config) *Exporter {
 	exporter := Exporter{config: config}
-	exporter.logger = config.Logger
+	exporter.logger = utils.GetLogger(config.Debug)
 	return &exporter
 }
 
@@ -46,8 +46,8 @@ func (e *Exporter) Export(exporterConfig *config.ExporterConfig) ExporterOutput 
 		return output
 	}
 
-	e.infraExporter = infra.NewInfraExporterFromConfig(e.config, exporterConfig, connectionStatus)
-	e.appExporter = app.NewAppExporterFromConfig(e.config, exporterConfig, connectionStatus)
+	e.infraExporter = infra.NewInfraExporterFromConfig(e.config, exporterConfig, connectionStatus, e.logger)
+	e.appExporter = app.NewAppExporterFromConfig(e.config, exporterConfig, connectionStatus, e.logger)
 
 	// TODO add InfraOutput struct
 	err = e.infraExporter.Export()

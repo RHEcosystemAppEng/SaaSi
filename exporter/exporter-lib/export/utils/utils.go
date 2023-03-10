@@ -159,3 +159,11 @@ func PrettyPrint(logger *logrus.Logger, message string, obj any) {
 	}
 	logger.Infof(message, string(b))
 }
+
+func GetLogger(debug bool) *logrus.Logger {
+	log := logrus.New()
+	if debug {
+		log.SetLevel(logrus.DebugLevel)
+	}
+	return log
+}

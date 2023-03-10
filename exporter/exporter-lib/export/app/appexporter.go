@@ -19,7 +19,7 @@ import (
 
 type AppExporter struct {
 	appContext *AppContext
-	logger     logrus.Logger
+	logger     *logrus.Logger
 }
 
 type AppExporterOutput struct {
@@ -29,9 +29,9 @@ type AppExporterOutput struct {
 	Location        string `json:"location"`
 }
 
-func NewAppExporterFromConfig(config *config.Config, exporterConfig *config.ExporterConfig, connectionStatus *connect.ConnectionStatus) *AppExporter {
-	exporter := AppExporter{appContext: NewAppContextFromConfig(config, exporterConfig, connectionStatus)}
-	exporter.logger = *config.Logger
+func NewAppExporterFromConfig(config *config.Config, exporterConfig *config.ExporterConfig, connectionStatus *connect.ConnectionStatus, logger *logrus.Logger) *AppExporter {
+	exporter := AppExporter{appContext: NewAppContextFromConfig(config, exporterConfig, connectionStatus, logger)}
+	exporter.logger = logger
 
 	return &exporter
 }
