@@ -8,17 +8,17 @@ import (
 	"os"
 
 	"github.com/RHEcosystemAppEng/SaaSi/exporter/exporter-lib/config"
-	"github.com/RHEcosystemAppEng/SaaSi/exporter/exporter-lib/export"
+	"github.com/RHEcosystemAppEng/SaaSi/exporter/exporter-lib/connect"
+	"github.com/RHEcosystemAppEng/SaaSi/exporter/exporter-lib/export/app"
 	"github.com/RHEcosystemAppEng/SaaSi/exporter/exporter-lib/export/utils"
 	"github.com/gorilla/mux"
 	"github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v2"
 )
 
-type AppExporter struct {
-	config   *config.Config
-	logger   *logrus.Logger
-	exporter *export.Exporter
+type AppExporterService struct {
+	config *config.Config
+	logger *logrus.Logger
 }
 
 type applicationInfo struct {
@@ -31,25 +31,25 @@ var BuildVersion = "development"
 var router = mux.NewRouter()
 
 func main() {
-	appExporter := AppExporter{}
-	appExporter.config = config.ReadConfigFromEnvVars()
-	appExporter.logger = utils.GetLogger(appExporter.config.Debug)
-	appExporter.exporter = export.NewExporterFromConfig(appExporter.config)
+	appExporterService := AppExporterService{}
+	appExporterService.config = config.ReadConfigFromEnvVars()
+	appExporterService.logger = utils.GetLogger(appExporterService.config.Debug)
+	utils.PrettyPrint(appExporterService.logger, "Runtime configuration: %s", appExporterService.config)
 
-	appExporter.logger.Infof("Running %s with version %s", os.Args[0], BuildVersion)
+	appExporterService.logger.Infof("Running %s with version %s", os.Args[0], BuildVersion)
 
-	router.Path("/export/application").HandlerFunc(appExporter.export).Methods("POST")
-	router.Path("/export/application").HandlerFunc(appExporter.info).Methods("GET")
+	router.Path("/export/application").HandlerFunc(appExporterService.export).Methods("POST")
+	router.Path("/export/application").HandlerFunc(appExporterService.info).Methods("GET")
 
 	host := "0.0.0.0"
 	url := fmt.Sprintf("%s:%d", host, 8080)
-	appExporter.logger.Infof("Starting listener as %s", url)
+	appExporterService.logger.Infof("Starting listener as %s", url)
 	if err := http.ListenAndServe(url, router); err != nil {
-		appExporter.logger.Fatal(err)
+		appExporterService.logger.Fatal(err)
 	}
 }
 
-func (e *AppExporter) export(rw http.ResponseWriter, req *http.Request) {
+func (e *AppExporterService) export(rw http.ResponseWriter, req *http.Request) {
 	if req.URL.Path == "/export/application" {
 		if req.Method == "POST" {
 			reqBody, err := io.ReadAll(req.Body)
@@ -60,8 +60,8 @@ func (e *AppExporter) export(rw http.ResponseWriter, req *http.Request) {
 				return
 			}
 
-			exporterConfig := config.ExporterConfig{}
-			err = yaml.Unmarshal(reqBody, &exporterConfig)
+			exporterConfig := &config.ExporterConfig{}
+			err = yaml.Unmarshal(reqBody, exporterConfig)
 			if err != nil {
 				message := fmt.Sprintf("Cannot unmarshal request body to expected model: %s", err.Error())
 				e.logger.Errorf(message)
@@ -71,8 +71,21 @@ func (e *AppExporter) export(rw http.ResponseWriter, req *http.Request) {
 			}
 
 			e.logger.Infof("Running export request: %# v", string(reqBody))
-			output := e.exporter.Export(&exporterConfig)
+			connectionStatus := connect.ConnectCluster(&exporterConfig.Cluster, e.logger)
+			if connectionStatus.Error != nil {
+				message := fmt.Sprintf("Cannot connect to given cluster: %s", connectionStatus.Error)
+				e.logger.Errorf(message)
+				rw.WriteHeader(http.StatusOK)
+				rw.Header().Set("Content-Type", "application/json")
+				output := app.AppExporterOutput{ApplicationName: exporterConfig.Application.Name, Status: utils.Failed.String(),
+					ErrorMessage: message}
+				yamlOutput, _ := json.Marshal(output)
+				rw.Write([]byte(yamlOutput))
+				return
+			}
 
+			appExporter := app.NewAppExporterFromConfig(e.config, exporterConfig, connectionStatus, e.logger)
+			output := appExporter.Export()
 			yamlOutput, err := json.Marshal(output)
 			if err != nil {
 				message := fmt.Sprintf("Cannot marshal response output to expected model: %s", err.Error())
@@ -92,7 +105,7 @@ func (e *AppExporter) export(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 }
-func (e *AppExporter) info(rw http.ResponseWriter, req *http.Request) {
+func (e *AppExporterService) info(rw http.ResponseWriter, req *http.Request) {
 	if req.URL.Path == "/export/application" {
 		if req.Method == "GET" {
 			rw.WriteHeader(http.StatusOK)
