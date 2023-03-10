@@ -46,7 +46,7 @@ func ProvisionCluster(infraCtx *context.InfraContext, customParams *config.Clust
 	playbook.RenderedTemplatePath = filepath.Join(infraCtx.InfraRootDir,playbook.RenderedTemplatePath)
 	// Copy rendered input file to playbook directory and update renderedTemplatePath to this new location
 	playbook.RenderedTemplatePath = copyRenderedTemplateToPlaybookDir(playbook)
-	return playbook.Run()
+	return playbook.Run(infraCtx)
 
 }
 

@@ -1,5 +1,7 @@
 package ansible
 
+import "github.com/RHEcosystemAppEng/SaaSi/deployer/pkg/context"
+
 type PlayBookResults struct {
 	User      string
 	Password         string
@@ -10,5 +12,5 @@ type PlayBookResults struct {
 }
 
 type PlaybookRunner interface {
-	Run()  PlayBookResults
+	Run(*context.InfraContext) PlayBookResults
 }

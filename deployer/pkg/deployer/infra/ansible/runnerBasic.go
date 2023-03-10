@@ -1,6 +1,8 @@
 package ansible
 
 import (
+	"github.com/RHEcosystemAppEng/SaaSi/deployer/pkg/context"
+	"github.com/RHEcosystemAppEng/SaaSi/deployer/pkg/utils"
 	"log"
 	"os"
 	"os/exec"
@@ -10,7 +12,7 @@ import (
 
 const PlaybookRunnerProg = "ansible-playbook"
 
-func (playbook Playbook) Run() PlayBookResults {
+func (playbook Playbook) Run(infraCtx *context.InfraContext) PlayBookResults {
 
 	_, err := exec.LookPath(PlaybookRunnerProg)
 	if err != nil {
@@ -48,13 +50,26 @@ func (playbook Playbook) Run() PlayBookResults {
 		log.Fatalf("Failed to read adminPassword file , Detailed Error : %s",  err)
 		return PlayBookResults{}
 	}
-
+	clusterOutputDirectory := filepath.Join(infraCtx.OutputClustersFolder, finalClusterName)
+	utils.CreateDir(clusterOutputDirectory)
+	copyPlaybookDirectory(playbookDir, clusterOutputDirectory)
 	playbookResults := PlayBookResults{
 		User:             "kubeadmin",
 		Password:         string(adminPassword),
 		ApiServer:        transportApiServerAddressPort,
 		KubeConfigPath:   kubeConfigOutputLocation,
 		AdditionalFields: nil,
+
 	}
 	return playbookResults
+}
+
+//recursively copy all
+func copyPlaybookDirectory(source string, destination string) {
+
+	cmd := exec.Command("cp", "-r", source, destination)
+	if err := cmd.Run(); err != nil {
+		log.Fatalf("Failed to generate playbook output directory in location : %s, \n from location: %s, \n Error: %s", destination, source , err)
+	}
+
 }

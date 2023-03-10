@@ -7,4 +7,5 @@ type Playbook struct{
 	Path string
 	OverrideParametersPath string
 	RenderedTemplatePath string
+	OutputLocation string
 }

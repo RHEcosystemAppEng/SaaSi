@@ -31,7 +31,7 @@ func main() {
 			reflect.ValueOf(clusterConfig.Token).IsZero() &&
 			reflect.ValueOf(clusterConfig.User).IsZero(){
 			//deployApp = false
-			infraContext := context.InitInfraContext()
+			infraContext := context.InitInfraContext(componentConfig.FlagArgs)
 			beautifiedConfig, err := json.MarshalIndent(clusterConfig.Params, "", "   ")
 			if err != nil {
 				return
