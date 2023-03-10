@@ -3,7 +3,7 @@ module github.com/RHEcosystemAppEng/SaaSi/exporter/app-exporter
 go 1.19
 
 require (
-	github.com/RHEcosystemAppEng/SaaSi/exporter/exporter-lib v0.0.0-00010101000000-000000000000
+	github.com/RHEcosystemAppEng/SaaSi/exporter/exporter-lib v0.0.0-20230310135053-4565d45e5fb9
 	github.com/gorilla/mux v1.8.0
 	github.com/sirupsen/logrus v1.8.1
 	gopkg.in/yaml.v2 v2.4.0
@@ -86,4 +86,4 @@ require (
 	sigs.k8s.io/yaml v1.3.0 // indirect
 )
 
-replace github.com/RHEcosystemAppEng/SaaSi/exporter/exporter-lib => ../exporter-lib
+// replace github.com/RHEcosystemAppEng/SaaSi/exporter/exporter-lib => ../exporter-lib
