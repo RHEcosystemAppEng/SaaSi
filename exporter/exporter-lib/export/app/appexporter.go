@@ -1,75 +1,121 @@
 package app
 
 import (
-	"log"
+	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 
 	"github.com/RHEcosystemAppEng/SaaSi/exporter/exporter-lib/config"
 	"github.com/RHEcosystemAppEng/SaaSi/exporter/exporter-lib/connect"
+	"github.com/RHEcosystemAppEng/SaaSi/exporter/exporter-lib/export/utils"
 	"github.com/konveyor/crane/cmd/apply"
 	"github.com/konveyor/crane/cmd/export"
 	"github.com/konveyor/crane/cmd/transform"
+	"github.com/sirupsen/logrus"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 )
 
 type AppExporter struct {
 	appContext *AppContext
+	logger     logrus.Logger
+}
+
+type AppExporterOutput struct {
+	ApplicationName string `json:"applicationName"`
+	Status          string `json:"status"`
+	ErrorMessage    string `json:"errorMessage"`
+	Location        string `json:"location"`
 }
 
 func NewAppExporterFromConfig(config *config.Config, exporterConfig *config.ExporterConfig, connectionStatus *connect.ConnectionStatus) *AppExporter {
 	exporter := AppExporter{appContext: NewAppContextFromConfig(config, exporterConfig, connectionStatus)}
+	exporter.logger = *config.Logger
 
 	return &exporter
 }
 
-func (e *AppExporter) Export() {
-	e.PrepareOutput()
-	e.ExportWithCrane()
+func (e *AppExporter) Export() AppExporterOutput {
+	output := AppExporterOutput{ApplicationName: e.appContext.AppConfig.Name}
+	err := e.PrepareOutput()
+	if err != nil {
+		output.ErrorMessage = err.Error()
+		output.Status = utils.Failed.String()
+	}
+	err = e.ExportWithCrane()
+	if err != nil {
+		output.ErrorMessage = err.Error()
+		output.Status = utils.Failed.String()
+	}
 
 	parametrizer := NewParametrizerFromConfig(e.appContext)
-	parametrizer.ExposeParameters()
+	err = parametrizer.ExposeParameters()
+	if err != nil {
+		output.ErrorMessage = err.Error()
+		output.Status = utils.Failed.String()
+	}
 
 	installer := NewInstallerFromConfig(e.appContext)
-	installer.BuildKustomizeInstaller()
+	err = installer.BuildKustomizeInstaller()
+	if err != nil {
+		output.ErrorMessage = err.Error()
+		output.Status = utils.Failed.String()
+	} else {
+		output.ErrorMessage = ""
+		output.Status = utils.Ok.String()
+		output.Location = e.appContext.AppFolder
+	}
+
+	return output
 }
 
-func (e *AppExporter) PrepareOutput() {
+func (e *AppExporter) PrepareOutput() error {
 	if _, err := os.Stat(e.appContext.AppFolder); !os.IsNotExist(err) {
-		log.Printf("Directory exists %v", e.appContext.AppFolder)
+		e.logger.Infof("Directory exists %v", e.appContext.AppFolder)
 		os.RemoveAll(e.appContext.AppFolder)
 	}
 
 	if err := os.MkdirAll(e.appContext.AppFolder, os.ModePerm); err != nil {
-		log.Fatalf("Cannot create %v folder: %v", e.appContext.AppFolder, err)
+		return errors.New(fmt.Sprintf("Cannot create %v folder: %v", e.appContext.AppFolder, err))
 	}
-	log.Printf("Created output folder %s", e.appContext.AppFolder)
+	e.logger.Infof("Created output folder %s", e.appContext.AppFolder)
 	for _, ns := range e.appContext.AppConfig.Namespaces {
 		nsFolder := filepath.Join(e.appContext.AppFolder, ns.Name)
 		if err := os.Mkdir(nsFolder, os.ModePerm); err != nil {
-			log.Fatalf("Cannot create %v folder: %v", nsFolder, err)
+			return errors.New(fmt.Sprintf("Cannot create %v folder: %v", nsFolder, err))
 		}
-		log.Printf("Created output folder %s", nsFolder)
+		e.logger.Infof("Created output folder %s", nsFolder)
 	}
+	return nil
 }
 
-func (e *AppExporter) ExportWithCrane() {
+func (e *AppExporter) ExportWithCrane() error {
 	for _, ns := range e.appContext.AppConfig.Namespaces {
 		nsFolder := filepath.Join(e.appContext.AppFolder, ns.Name)
-		log.Printf("Exporting NS %s with crane", nsFolder)
+		e.logger.Infof("Exporting NS %s with crane", nsFolder)
 
 		exportFolder := e.appContext.ExportFolderForNS(ns.Name)
 		transformFolder := e.appContext.TransformFolderForNS(ns.Name)
 		outputFolder := e.appContext.OutputFolderForNS(ns.Name)
 
-		doExport(e.appContext.KubeConfigPath(), ns.Name, exportFolder)
-		doTransform(exportFolder, transformFolder)
-		doApply(exportFolder, transformFolder, outputFolder)
+		err := doExport(e.appContext.KubeConfigPath(), ns.Name, exportFolder)
+		if err != nil {
+			return err
+		}
+		err = doTransform(exportFolder, transformFolder)
+		if err != nil {
+			return err
+		}
+		err = doApply(exportFolder, transformFolder, outputFolder)
+		if err != nil {
+			return err
+		}
 	}
+	return nil
 }
 
-func doExport(kubeConfigPath string, namespace string, exportFolder string) {
+func doExport(kubeConfigPath string, namespace string, exportFolder string) error {
 	exportCmd := export.NewExportCommand(genericclioptions.IOStreams{
 		In:     strings.NewReader(""),
 		Out:    os.Stdout,
@@ -87,12 +133,10 @@ func doExport(kubeConfigPath string, namespace string, exportFolder string) {
 	exportCmd.SetArgs([]string{})
 
 	_, err := exportCmd.ExecuteC()
-	if err != nil {
-		log.Fatalf(err.Error())
-	}
+	return err
 }
 
-func doTransform(exportFolder string, transformFolder string) {
+func doTransform(exportFolder string, transformFolder string) error {
 	transformCmd := transform.NewTransformCommand(nil)
 
 	exportDir := transformCmd.Flags().Lookup("export-dir")
@@ -102,12 +146,10 @@ func doTransform(exportFolder string, transformFolder string) {
 	transformCmd.SetArgs([]string{})
 
 	_, err := transformCmd.ExecuteC()
-	if err != nil {
-		log.Fatalf(err.Error())
-	}
+	return err
 }
 
-func doApply(exportFolder string, transformFolder string, outputFolder string) {
+func doApply(exportFolder string, transformFolder string, outputFolder string) error {
 	applyCmd := apply.NewApplyCommand(nil)
 
 	exportDir := applyCmd.Flags().Lookup("export-dir")
@@ -119,8 +161,5 @@ func doApply(exportFolder string, transformFolder string, outputFolder string) {
 	applyCmd.SetArgs([]string{})
 
 	_, err := applyCmd.ExecuteC()
-	if err != nil {
-		log.Fatalf(err.Error())
-	}
-
+	return err
 }

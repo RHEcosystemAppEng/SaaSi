@@ -3,18 +3,19 @@ package app
 import (
 	"fmt"
 	"io/fs"
-	"log"
 	"os"
 	"path/filepath"
 	"strings"
 
 	"github.com/RHEcosystemAppEng/SaaSi/exporter/exporter-lib/export/utils"
+	"github.com/sirupsen/logrus"
 )
 
 type Installer struct {
 	appContext *AppContext
 
 	sccToBeReplacedByNS map[string][]SccForSA
+	logger              *logrus.Logger
 }
 
 type SccForSA struct {
@@ -25,13 +26,14 @@ type SccForSA struct {
 func NewInstallerFromConfig(appContext *AppContext) *Installer {
 	installer := Installer{appContext: appContext}
 
+	installer.logger = appContext.Logger
 	installer.sccToBeReplacedByNS = make(map[string][]SccForSA)
 	return &installer
 }
 
-func (i *Installer) BuildKustomizeInstaller() {
+func (i *Installer) BuildKustomizeInstaller() error {
 	for _, ns := range i.appContext.AppConfig.Namespaces {
-		log.Printf("Creating kustomize installer for NS %s", ns.Name)
+		i.logger.Infof("Creating kustomize installer for NS %s", ns.Name)
 
 		outputFolder := i.appContext.OutputFolderForNS(ns.Name)
 		kustomizeFolder := i.appContext.BaseKustomizeFolderForNS(ns.Name)
@@ -44,7 +46,7 @@ func (i *Installer) BuildKustomizeInstaller() {
 				return e
 			}
 			if !d.IsDir() && filepath.Ext(d.Name()) == ".yaml" {
-				// log.Printf("Moving %s to %s", d.Name(), kustomizeFolder)
+				i.logger.Debugf("Moving %s to %s", d.Name(), kustomizeFolder)
 				os.Rename(path, filepath.Join(kustomizeFolder, d.Name()))
 				utils.AppendToFile(kustomization, fmt.Sprintf("\n  - %s", d.Name()))
 			}
@@ -52,12 +54,13 @@ func (i *Installer) BuildKustomizeInstaller() {
 		})
 	}
 
-	i.createKustomizeTemplate()
+	err := i.createKustomizeTemplate()
+	return err
 }
 
-func (i *Installer) createKustomizeTemplate() {
+func (i *Installer) createKustomizeTemplate() error {
 	for _, ns := range i.appContext.AppConfig.Namespaces {
-		log.Printf("Creating kustomize template for NS %s", ns.Name)
+		i.logger.Infof("Creating kustomize template for NS %s", ns.Name)
 		templateFolder := i.appContext.KustomizeTemplateFolderForNS(ns.Name)
 
 		paramsFolder := filepath.Join(templateFolder, ParamsFolder)
@@ -69,13 +72,19 @@ func (i *Installer) createKustomizeTemplate() {
 		os.Create(templateKustomization)
 		text := "resources:\n" +
 			"  - ../base\n"
-		utils.AppendToFile(templateKustomization, text)
+		err := utils.AppendToFile(templateKustomization, text)
+		if err != nil {
+			return err
+		}
 
 		text = "generatorOptions:\n" +
 			"  disableNameSuffixHash: true\n" +
 			"configMapGenerator:"
-		utils.AppendToFile(templateKustomization, text)
-		err := filepath.WalkDir(paramsFolder,
+		err = utils.AppendToFile(templateKustomization, text)
+		if err != nil {
+			return err
+		}
+		err = filepath.WalkDir(paramsFolder,
 			func(path string, d fs.DirEntry, err error) error {
 				if err != nil {
 					return err
@@ -83,7 +92,7 @@ func (i *Installer) createKustomizeTemplate() {
 				if !d.IsDir() {
 					configMap := strings.Replace(d.Name(), ".env", "", 1)
 
-					log.Printf("Creating configMapGenerator for %s", configMap)
+					i.logger.Infof("Creating configMapGenerator for %s", configMap)
 					text = "\n" +
 						"- name: %s\n" +
 						"  behavior: merge\n" +
@@ -93,29 +102,31 @@ func (i *Installer) createKustomizeTemplate() {
 				}
 				return nil
 			})
-		if err == nil {
-			text := "\nsecretGenerator:"
-			utils.AppendToFile(templateKustomization, text)
-			err = filepath.WalkDir(secretsFolder,
-				func(path string, d fs.DirEntry, err error) error {
-					if err != nil {
-						return err
-					}
-					if !d.IsDir() {
-						secret := strings.Replace(d.Name(), ".env", "", 1)
-						log.Printf("Creating secretGenerator for %s", secret)
-						text = "\n" +
-							"- name: %s\n" +
-							"  behavior: create\n" +
-							"  envs:\n" +
-							"  - %s/%s"
-						utils.AppendToFile(templateKustomization, text, secret, SecretsFolder, d.Name())
-					}
-					return nil
-				})
-			if err != nil {
-				log.Fatalf("Cannot create kustomize template: %s", err)
-			}
+		if err != nil {
+			return err
+		}
+		text = "\nsecretGenerator:"
+		utils.AppendToFile(templateKustomization, text)
+		err = filepath.WalkDir(secretsFolder,
+			func(path string, d fs.DirEntry, err error) error {
+				if err != nil {
+					return err
+				}
+				if !d.IsDir() {
+					secret := strings.Replace(d.Name(), ".env", "", 1)
+					i.logger.Infof("Creating secretGenerator for %s", secret)
+					text = "\n" +
+						"- name: %s\n" +
+						"  behavior: create\n" +
+						"  envs:\n" +
+						"  - %s/%s"
+					utils.AppendToFile(templateKustomization, text, secret, SecretsFolder, d.Name())
+				}
+				return nil
+			})
+		if err != nil {
+			i.logger.Errorf("Cannot create kustomize template: %s", err)
+			return err
 		}
 
 		if len(i.sccToBeReplacedByNS[ns.Name]) > 0 {
@@ -141,4 +152,5 @@ func (i *Installer) createKustomizeTemplate() {
 			}
 		}
 	}
+	return nil
 }
