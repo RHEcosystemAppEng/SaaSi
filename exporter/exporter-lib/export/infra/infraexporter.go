@@ -16,7 +16,7 @@ func NewInfraExporterFromConfig(config *config.Config, exporterConfig *config.Ex
 	return &exporter
 }
 
-func (e *InfraExporter) Export() {
-	utils.RunCommandAndLog(e.infraContext.ExportScript, "-k", e.infraContext.KubeConfigPath(),
+func (e *InfraExporter) Export() error {
+	return utils.RunCommandAndLog(e.infraContext.Logger, e.infraContext.ExportScript, "-k", e.infraContext.KubeConfigPath(),
 		"-i", e.infraContext.clusterConfig.ClusterId, "-r", e.infraContext.ClusterFolder)
 }

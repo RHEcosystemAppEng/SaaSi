@@ -8,6 +8,7 @@ import (
 
 	"github.com/RHEcosystemAppEng/SaaSi/exporter/exporter-lib/config"
 	"github.com/RHEcosystemAppEng/SaaSi/exporter/exporter-lib/connect"
+	"github.com/sirupsen/logrus"
 	"k8s.io/client-go/rest"
 )
 
@@ -18,11 +19,13 @@ type Context interface {
 type ExporterContext struct {
 	OutputFolder     string
 	ConnectionStatus *connect.ConnectionStatus
+	Logger           *logrus.Logger
 }
 
 func (c *ExporterContext) InitFromConfig(config *config.Config, connectionStatus *connect.ConnectionStatus) {
 	c.ConnectionStatus = connectionStatus
 	c.OutputFolder = config.RootOutputFolder
+	c.Logger = config.Logger
 }
 
 func (c *ExporterContext) RootFolder() string {

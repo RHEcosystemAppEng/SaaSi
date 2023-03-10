@@ -2,9 +2,9 @@ package connect
 
 import (
 	"io/ioutil"
-	"log"
 
 	"github.com/RHEcosystemAppEng/SaaSi/exporter/exporter-lib/config"
+	"github.com/sirupsen/logrus"
 	"k8s.io/apimachinery/pkg/version"
 	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/rest"
@@ -18,7 +18,7 @@ type ConnectionStatus struct {
 	Error          error
 }
 
-func ConnectCluster(clusterConfig *config.ClusterConfig) *ConnectionStatus {
+func ConnectCluster(clusterConfig *config.ClusterConfig, logger *logrus.Logger) *ConnectionStatus {
 	status := ConnectionStatus{}
 
 	status.KubeConfig = &rest.Config{}
@@ -28,9 +28,9 @@ func ConnectCluster(clusterConfig *config.ClusterConfig) *ConnectionStatus {
 	// kubeConfig.APIPath = i.clusterConfig.Server
 	status.KubeConfig.Insecure = true
 
-	status.KubeConfigPath, status.Error = generateKubeConfiguration(clusterConfig)
+	status.KubeConfigPath, status.Error = generateKubeConfiguration(clusterConfig, logger)
 	if status.Error == nil {
-		log.Printf("Connected to cluster %s at server %s", clusterConfig.ClusterId, clusterConfig.Server)
+		logger.Infof("Connected to cluster %s at server %s", clusterConfig.ClusterId, clusterConfig.Server)
 
 		var discoveryClient *discovery.DiscoveryClient
 		discoveryClient, status.Error = discovery.NewDiscoveryClientForConfig(status.KubeConfig)
@@ -38,14 +38,14 @@ func ConnectCluster(clusterConfig *config.ClusterConfig) *ConnectionStatus {
 			var version *version.Info
 			version, status.Error = discoveryClient.ServerVersion()
 			if status.Error == nil {
-				log.Printf("Connected to cluster with version: %s", version)
+				logger.Infof("Connected to cluster with version: %s", version)
 			}
 		}
 	}
 	return &status
 }
 
-func generateKubeConfiguration(clusterConfig *config.ClusterConfig) (string, error) {
+func generateKubeConfiguration(clusterConfig *config.ClusterConfig, logger *logrus.Logger) (string, error) {
 	namespace := "default"
 	clusters := make(map[string]*api.Cluster)
 	clusters["default-cluster"] = &api.Cluster{
@@ -78,7 +78,7 @@ func generateKubeConfiguration(clusterConfig *config.ClusterConfig) (string, err
 	kubeconfig, err := ioutil.TempFile("/tmp", "config")
 	if err == nil {
 		clientcmd.WriteToFile(clientConfig, kubeconfig.Name())
-		log.Printf("Saved kubeconfig to %s", kubeconfig.Name())
+		logger.Infof("Saved kubeconfig to %s", kubeconfig.Name())
 	}
 	return kubeconfig.Name(), err
 }

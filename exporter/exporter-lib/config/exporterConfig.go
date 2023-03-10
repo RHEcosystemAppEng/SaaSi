@@ -1,11 +1,13 @@
 package config
 
 import (
+	"errors"
 	"flag"
 	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
+	"reflect"
 
 	"github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v2"
@@ -88,6 +90,30 @@ func (c *Config) ReadExporterConfig() *ExporterConfig {
 		log.Fatal(err)
 	}
 	return &exporterConfig
+}
+
+func (e *ExporterConfig) Validate() error {
+	if reflect.ValueOf(e.Cluster).IsZero() {
+		return errors.New("missing cluster configuration")
+	} else {
+		if e.Cluster.ClusterId == "" {
+			return errors.New("missing clusterId configuration")
+		}
+		if e.Cluster.Server == "" {
+			return errors.New("missing server configuration")
+		}
+		if e.Cluster.Token == "" {
+			return errors.New("missing token configuration")
+		}
+	}
+	if reflect.ValueOf(e.Application).IsZero() {
+		return errors.New("missing application configuration")
+	} else {
+		if e.Application.Name == "" {
+			return errors.New("missing application name configuration")
+		}
+	}
+	return nil
 }
 
 func (c *ApplicationConfig) MandatoryParamsByNSAndConfigMap(namespace string, configMap string) []string {
