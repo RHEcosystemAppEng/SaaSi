@@ -3,15 +3,16 @@ package main
 import (
 	config "github.com/RHEcosystemAppEng/SaaSi/exporter/exporter-lib/config"
 	export "github.com/RHEcosystemAppEng/SaaSi/exporter/exporter-lib/export"
-	"github.com/kr/pretty"
+	"github.com/RHEcosystemAppEng/SaaSi/exporter/exporter-lib/export/utils"
 )
 
 func main() {
 	config := config.ReadConfig()
-	pretty.Printf("Runtime configuration %# v", config)
+	utils.PrettyPrint(config.Logger, "Runtime configuration: %s", config)
 	exporterConfig := config.ReadExporterConfig()
-	pretty.Printf("Export configuration %# v", exporterConfig)
+	utils.PrettyPrint(config.Logger, "Export configuration: %s", exporterConfig)
 
 	exporter := export.NewExporterFromConfig(config)
-	exporter.Export(exporterConfig)
+	output := exporter.Export(exporterConfig)
+	utils.PrettyPrint(config.Logger, "Output: %s", output)
 }
