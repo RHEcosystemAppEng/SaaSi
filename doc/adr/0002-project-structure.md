@@ -1,10 +1,11 @@
-# 2. project structure
+# 2. Project structure
 
 Date: 2023-03-07
 
 ## Status
 
-Proposed
+Proposed: 2023-03-07
+Accepted: 2023-03-08
 
 ## Context
 
