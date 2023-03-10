@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 
 	"github.com/RHEcosystemAppEng/SaaSi/exporter/exporter-lib/config"
 	"github.com/RHEcosystemAppEng/SaaSi/exporter/exporter-lib/export"
@@ -19,6 +20,13 @@ type AppExporter struct {
 	exporter *export.Exporter
 }
 
+type applicationInfo struct {
+	Name    string `yaml:"name"`
+	Version string `yaml:"version"`
+	Status  string `yaml:"status"`
+}
+
+var BuildVersion = "development"
 var router = mux.NewRouter()
 
 func main() {
@@ -27,7 +35,10 @@ func main() {
 	appExporter.logger = appExporter.config.Logger
 	appExporter.exporter = export.NewExporterFromConfig(appExporter.config)
 
+	appExporter.logger.Infof("Running %s with version %s", os.Args[0], BuildVersion)
+
 	router.Path("/export/application").HandlerFunc(appExporter.export).Methods("POST")
+	router.Path("/export/application").HandlerFunc(appExporter.info).Methods("GET")
 
 	host := "0.0.0.0"
 	url := fmt.Sprintf("%s:%d", host, 8080)
@@ -72,7 +83,25 @@ func (e *AppExporter) export(rw http.ResponseWriter, req *http.Request) {
 			rw.Header().Set("Content-Type", "application/json")
 			rw.Write([]byte(yamlOutput))
 		} else {
-			http.Error(rw, fmt.Sprintf("Expect method POST at /, got %v", req.Method), http.StatusMethodNotAllowed)
+			http.Error(rw, fmt.Sprintf("Expect method POST at /export/application, got %v", req.Method), http.StatusMethodNotAllowed)
+		}
+	} else {
+		http.Error(rw, fmt.Sprintf("Unmanaged path %s", req.URL.Path), http.StatusNotFound)
+		http.NotFound(rw, req)
+		return
+	}
+}
+func (e *AppExporter) info(rw http.ResponseWriter, req *http.Request) {
+	if req.URL.Path == "/export/application" {
+		if req.Method == "GET" {
+			rw.WriteHeader(http.StatusOK)
+			rw.Header().Set("Content-Type", "application/json")
+			applicationInfo := applicationInfo{Name: "app-exporter", Version: BuildVersion, Status: "up"}
+			yamlOutput, _ := json.Marshal(applicationInfo)
+
+			rw.Write([]byte(yamlOutput))
+		} else {
+			http.Error(rw, fmt.Sprintf("Expect method GET at /export/application, got %v", req.Method), http.StatusMethodNotAllowed)
 		}
 	} else {
 		http.Error(rw, fmt.Sprintf("Unmanaged path %s", req.URL.Path), http.StatusNotFound)
