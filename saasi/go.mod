@@ -2,12 +2,9 @@ module github.com/RHEcosystemAppEng/SaaSi/saasi
 
 go 1.19
 
-replace github.com/RHEcosystemAppEng/SaaSi/exporter/exporter-lib => /Users/dmartino/projects/saasi/SaaSi/exporter/exporter-lib
+replace github.com/RHEcosystemAppEng/SaaSi/exporter/exporter-lib => ../exporter/exporter-lib
 
-require (
-	github.com/RHEcosystemAppEng/SaaSi/exporter/exporter-lib v0.0.0-00010101000000-000000000000
-	github.com/kr/pretty v0.3.1
-)
+require github.com/RHEcosystemAppEng/SaaSi/exporter/exporter-lib v0.0.0-00010101000000-000000000000
 
 require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
@@ -37,7 +34,7 @@ require (
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/konveyor/crane v0.0.6-0.20230307141941-d14f18b72923 // indirect
 	github.com/konveyor/crane-lib v0.0.8 // indirect
-	github.com/kr/text v0.2.0 // indirect
+	github.com/kr/pretty v0.3.1 // indirect
 	github.com/liggitt/tabwriter v0.0.0-20181228230101-89fcab3d43de // indirect
 	github.com/magiconair/properties v1.8.6 // indirect
 	github.com/mailru/easyjson v0.7.6 // indirect
@@ -51,7 +48,6 @@ require (
 	github.com/pelletier/go-toml/v2 v2.0.1 // indirect
 	github.com/peterbourgon/diskv v2.0.1+incompatible // indirect
 	github.com/pkg/errors v0.9.1 // indirect
-	github.com/rogpeppe/go-internal v1.9.0 // indirect
 	github.com/sirupsen/logrus v1.8.1 // indirect
 	github.com/spf13/afero v1.8.2 // indirect
 	github.com/spf13/cast v1.5.0 // indirect
