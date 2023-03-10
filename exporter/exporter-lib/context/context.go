@@ -20,12 +20,14 @@ type ExporterContext struct {
 	OutputFolder     string
 	ConnectionStatus *connect.ConnectionStatus
 	logger           *logrus.Logger
+	Debug            bool
 }
 
-func (c *ExporterContext) InitFromConfig(config *config.Config, connectionStatus *connect.ConnectionStatus, logger *logrus.Logger) {
+func (c *ExporterContext) InitFromConfig(config *config.Config, connectionStatus *connect.ConnectionStatus, logger *logrus.Logger, debug bool) {
 	c.ConnectionStatus = connectionStatus
 	c.OutputFolder = config.RootOutputFolder
 	c.logger = logger
+	c.Debug = debug
 }
 
 func (c *ExporterContext) Logger() *logrus.Logger {

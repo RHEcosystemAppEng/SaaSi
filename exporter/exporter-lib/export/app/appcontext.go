@@ -32,7 +32,7 @@ type AppContext struct {
 func NewAppContextFromConfig(config *config.Config, exporterConfig *config.ExporterConfig, connectionStatus *connect.ConnectionStatus, logger *logrus.Logger) *AppContext {
 	appContext := AppContext{AppConfig: &exporterConfig.Application}
 
-	appContext.InitFromConfig(config, connectionStatus, logger)
+	appContext.InitFromConfig(config, connectionStatus, logger, config.Debug)
 	appContext.AppFolder = filepath.Join(appContext.OutputFolder, ApplicationsFolder, appContext.AppConfig.Name)
 
 	return &appContext

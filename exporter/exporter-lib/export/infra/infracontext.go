@@ -32,7 +32,7 @@ var scripts embed.FS
 func NewInfraContextFromConfig(config *config.Config, exporterConfig *config.ExporterConfig, connectionStatus *connect.ConnectionStatus, logger *logrus.Logger) *InfraContext {
 	context := InfraContext{clusterConfig: &exporterConfig.Cluster}
 
-	context.InitFromConfig(config, connectionStatus, logger)
+	context.InitFromConfig(config, connectionStatus, logger, config.Debug)
 
 	var err error
 	context.scriptFolder, err = utils.CopyEmbedderFolderToTempDir(scripts, "scripts")
