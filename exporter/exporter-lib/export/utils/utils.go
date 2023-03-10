@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"embed"
+	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -12,36 +13,53 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+
+	"github.com/sirupsen/logrus"
 )
 
-func RunCommand(name string, options ...string) {
-	cmd := exec.Command(name, options...)
-	log.Printf("Running %s", cmd)
-	err := cmd.Run()
-	if err != nil {
-		log.Fatal(err)
+type ResponseStatus int64
+
+const (
+	Ok ResponseStatus = iota
+	Failed
+)
+
+func (s ResponseStatus) String() string {
+	switch s {
+	case Ok:
+		return "ok"
+	case Failed:
+		return "failed"
 	}
+	return "unknown"
 }
-func RunCommandAndLog(name string, options ...string) {
+
+func RunCommand(logger *logrus.Logger, name string, options ...string) error {
 	cmd := exec.Command(name, options...)
-	log.Printf("Running %s", cmd)
+	logger.Infof("Running %s", cmd)
+	return cmd.Run()
+}
+func RunCommandAndLog(logger *logrus.Logger, name string, options ...string) error {
+	cmd := exec.Command(name, options...)
+	logger.Infof("Running %s", cmd)
 	stderr, err := cmd.StderrPipe()
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 	if err := cmd.Start(); err != nil {
-		log.Fatal(err)
+		return err
 	}
 
 	multi := io.MultiReader(stdout, stderr)
 	in := bufio.NewScanner(multi)
 	for in.Scan() {
-		log.Println(in.Text())
+		logger.Infof(in.Text())
 	}
+	return nil
 }
 
 func BackupFile(file string) string {
@@ -70,10 +88,10 @@ func ReplaceInFile(file string, original string, replacement string) {
 	}
 }
 
-func AppendToFile(file string, text string, args ...any) {
+func AppendToFile(file string, text string, args ...any) error {
 	f, err := os.OpenFile(file, os.O_APPEND|os.O_WRONLY, 0644)
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	defer f.Close()
@@ -82,6 +100,7 @@ func AppendToFile(file string, text string, args ...any) {
 	} else {
 		fmt.Fprint(f, text)
 	}
+	return nil
 }
 
 func SystemNameForSA(namespace string, serviceAccount string) string {
@@ -131,4 +150,20 @@ func recursiveCopyEmbeddedFolderToTempDir(embedFolder embed.FS, folderName strin
 	}
 
 	return nil
+}
+
+func PrettyPrint(logger *logrus.Logger, message string, obj any) {
+	b, err := json.MarshalIndent(obj, "", "  ")
+	if err != nil {
+		logger.Infof(message, obj)
+	}
+	logger.Infof(message, string(b))
+}
+
+func GetLogger(debug bool) *logrus.Logger {
+	log := logrus.New()
+	if debug {
+		log.SetLevel(logrus.DebugLevel)
+	}
+	return log
 }

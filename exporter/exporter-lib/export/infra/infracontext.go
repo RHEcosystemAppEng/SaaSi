@@ -10,6 +10,7 @@ import (
 	"github.com/RHEcosystemAppEng/SaaSi/exporter/exporter-lib/connect"
 	"github.com/RHEcosystemAppEng/SaaSi/exporter/exporter-lib/context"
 	"github.com/RHEcosystemAppEng/SaaSi/exporter/exporter-lib/export/utils"
+	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -28,10 +29,10 @@ type InfraContext struct {
 //go:embed scripts/*
 var scripts embed.FS
 
-func NewInfraContextFromConfig(config *config.Config, connectionStatus *connect.ConnectionStatus) *InfraContext {
-	context := InfraContext{clusterConfig: &config.Exporter.Cluster}
+func NewInfraContextFromConfig(config *config.Config, exporterConfig *config.ExporterConfig, connectionStatus *connect.ConnectionStatus, logger *logrus.Logger) *InfraContext {
+	context := InfraContext{clusterConfig: &exporterConfig.Cluster}
 
-	context.InitFromConfig(config, connectionStatus)
+	context.InitFromConfig(config, connectionStatus, logger, config.Debug)
 
 	var err error
 	context.scriptFolder, err = utils.CopyEmbedderFolderToTempDir(scripts, "scripts")
@@ -39,6 +40,6 @@ func NewInfraContextFromConfig(config *config.Config, connectionStatus *connect.
 		log.Fatalf("Cannot copy embedded scripts infra to temporary directory: %s", err)
 	}
 	context.ExportScript = filepath.Join(context.scriptFolder, "exporter.sh")
-	context.ClusterFolder = filepath.Join(context.OutputFolder, ClustersFolder, config.Exporter.Cluster.ClusterId)
+	context.ClusterFolder = filepath.Join(context.OutputFolder, ClustersFolder, exporterConfig.Cluster.ClusterId)
 	return &context
 }
