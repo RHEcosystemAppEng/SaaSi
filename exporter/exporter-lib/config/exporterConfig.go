@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"strings"
 
 	"gopkg.in/yaml.v2"
 )
@@ -76,7 +77,8 @@ func ReadConfigFromEnvVars() *Config {
 	}
 	config.RootOutputFolder = v
 
-	_, config.Debug = os.LookupEnv("DEBUG")
+	v, ok = os.LookupEnv("DEBUG")
+	config.Debug = ok && strings.ToLower(v) == "true"
 
 	return &config
 }
