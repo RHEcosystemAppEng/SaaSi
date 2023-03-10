@@ -31,7 +31,7 @@ var router = mux.NewRouter()
 
 func main() {
 	appExporter := AppExporter{}
-	appExporter.config = config.ReadConfig()
+	appExporter.config = config.ReadConfigFromEnvVars()
 	appExporter.logger = appExporter.config.Logger
 	appExporter.exporter = export.NewExporterFromConfig(appExporter.config)
 

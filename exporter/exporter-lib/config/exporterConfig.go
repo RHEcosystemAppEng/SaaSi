@@ -46,7 +46,7 @@ type MandatoryParam struct {
 	Params    []string `yaml:"params"`
 }
 
-func ReadConfig() *Config {
+func ReadConfigFromFlags() *Config {
 	defaultRoot, err := os.Getwd()
 	if err != nil {
 		log.Fatal(err)
@@ -67,6 +67,20 @@ func ReadConfig() *Config {
 	config.RootInstallationFolder = rootFolder
 	config.RootOutputFolder = outputFolder
 	config.Logger = getLogger(*debug)
+	return &config
+}
+
+func ReadConfigFromEnvVars() *Config {
+	config := Config{}
+	v, ok := os.LookupEnv("OUTPUT_DIR")
+	if !ok {
+		log.Fatal("missing mandatory variable OUTPUT_DIR")
+	}
+	config.RootOutputFolder = v
+
+	_, ok = os.LookupEnv("DEBUG")
+	config.Logger = getLogger(ok)
+
 	return &config
 }
 

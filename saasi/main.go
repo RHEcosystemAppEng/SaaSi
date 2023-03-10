@@ -7,7 +7,7 @@ import (
 )
 
 func main() {
-	config := config.ReadConfig()
+	config := config.ReadConfigFromFlags()
 	utils.PrettyPrint(config.Logger, "Runtime configuration: %s", config)
 	exporterConfig := config.ReadExporterConfig()
 	utils.PrettyPrint(config.Logger, "Export configuration: %s", exporterConfig)
