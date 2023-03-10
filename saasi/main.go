@@ -8,11 +8,12 @@ import (
 
 func main() {
 	config := config.ReadConfigFromFlags()
-	utils.PrettyPrint(config.Logger, "Runtime configuration: %s", config)
+	logger := utils.GetLogger(config.Debug)
+	utils.PrettyPrint(logger, "Runtime configuration: %s", config)
 	exporterConfig := config.ReadExporterConfig()
-	utils.PrettyPrint(config.Logger, "Export configuration: %s", exporterConfig)
+	utils.PrettyPrint(logger, "Export configuration: %s", exporterConfig)
 
 	exporter := export.NewExporterFromConfig(config)
 	output := exporter.Export(exporterConfig)
-	utils.PrettyPrint(config.Logger, "Output: %s", output)
+	utils.PrettyPrint(logger, "Output: %s", output)
 }

@@ -19,13 +19,17 @@ type Context interface {
 type ExporterContext struct {
 	OutputFolder     string
 	ConnectionStatus *connect.ConnectionStatus
-	Logger           *logrus.Logger
+	logger           *logrus.Logger
 }
 
-func (c *ExporterContext) InitFromConfig(config *config.Config, connectionStatus *connect.ConnectionStatus) {
+func (c *ExporterContext) InitFromConfig(config *config.Config, connectionStatus *connect.ConnectionStatus, logger *logrus.Logger) {
 	c.ConnectionStatus = connectionStatus
 	c.OutputFolder = config.RootOutputFolder
-	c.Logger = config.Logger
+	c.logger = logger
+}
+
+func (c *ExporterContext) Logger() *logrus.Logger {
+	return c.logger
 }
 
 func (c *ExporterContext) RootFolder() string {

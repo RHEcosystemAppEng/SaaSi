@@ -9,14 +9,13 @@ import (
 	"path/filepath"
 	"reflect"
 
-	"github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v2"
 )
 
 type Config struct {
 	RootInstallationFolder string
 	RootOutputFolder       string
-	Logger                 *logrus.Logger
+	Debug                  bool
 	exportConfigFile       string
 }
 
@@ -61,12 +60,11 @@ func ReadConfigFromFlags() *Config {
 	flag.StringVar(&outputFolder, "output-dir", defaultOutput, "Root output folder")
 	flag.StringVar(&outputFolder, "o", defaultOutput, "Root output folder (shorthand)")
 	flag.StringVar(&config.exportConfigFile, "f", "", "Application configuration file")
-	debug := flag.Bool("debug", false, "Debug the command by printing more information")
+	flag.BoolVar(&config.Debug, "debug", false, "Debug the command by printing more information")
 	flag.Parse()
 
 	config.RootInstallationFolder = rootFolder
 	config.RootOutputFolder = outputFolder
-	config.Logger = getLogger(*debug)
 	return &config
 }
 
@@ -78,18 +76,9 @@ func ReadConfigFromEnvVars() *Config {
 	}
 	config.RootOutputFolder = v
 
-	_, ok = os.LookupEnv("DEBUG")
-	config.Logger = getLogger(ok)
+	_, config.Debug = os.LookupEnv("DEBUG")
 
 	return &config
-}
-
-func getLogger(debug bool) *logrus.Logger {
-	log := logrus.New()
-	if debug {
-		log.SetLevel(logrus.DebugLevel)
-	}
-	return log
 }
 
 func (c *Config) ReadExporterConfig() *ExporterConfig {

@@ -6,6 +6,7 @@ import (
 	"github.com/RHEcosystemAppEng/SaaSi/exporter/exporter-lib/config"
 	"github.com/RHEcosystemAppEng/SaaSi/exporter/exporter-lib/connect"
 	"github.com/RHEcosystemAppEng/SaaSi/exporter/exporter-lib/context"
+	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -28,10 +29,10 @@ type AppContext struct {
 	AppFolder string
 }
 
-func NewAppContextFromConfig(config *config.Config, exporterConfig *config.ExporterConfig, connectionStatus *connect.ConnectionStatus) *AppContext {
+func NewAppContextFromConfig(config *config.Config, exporterConfig *config.ExporterConfig, connectionStatus *connect.ConnectionStatus, logger *logrus.Logger) *AppContext {
 	appContext := AppContext{AppConfig: &exporterConfig.Application}
 
-	appContext.InitFromConfig(config, connectionStatus)
+	appContext.InitFromConfig(config, connectionStatus, logger)
 	appContext.AppFolder = filepath.Join(appContext.OutputFolder, ApplicationsFolder, appContext.AppConfig.Name)
 
 	return &appContext

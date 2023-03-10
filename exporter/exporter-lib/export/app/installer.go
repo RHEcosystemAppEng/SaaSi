@@ -24,9 +24,8 @@ type SccForSA struct {
 }
 
 func NewInstallerFromConfig(appContext *AppContext) *Installer {
-	installer := Installer{appContext: appContext}
+	installer := Installer{appContext: appContext, logger: appContext.Logger()}
 
-	installer.logger = appContext.Logger
 	installer.sccToBeReplacedByNS = make(map[string][]SccForSA)
 	return &installer
 }
