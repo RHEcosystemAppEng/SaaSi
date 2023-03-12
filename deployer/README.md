@@ -24,6 +24,10 @@ A Golang CLI tool to deploy configurations extracted from a live OpenShit/Kubern
 ```shell
 git submodule add git@github.com:RHEcosystemAppEng/ocp_labs_provisioner.git deployer/infra/playbook
 ```
+**Note: If .gitmodules file already exists, need to run the following command:**
+```shell
+git submodule update --checkout  -- deployer/infra/playbook 
+```
 Note: If you're not sure if you're at the top level of the git repo or not, just run the following two commands:
 ```shell
 pwd
