@@ -1,4 +1,23 @@
 name: Build exporter images
-on: [workflow_dispatch]
-
+on:
+  workflow_dispatch:
+env:
+  IMAGE_REGISTRY: quay.io
+  IMAGE_REPOSITORY: ecosystem-appeng
+  APP_EXPORTER_IMAGE_NAME: saasi-app-exporter
 jobs:
+  build-image-and-push:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Build Docker image and publish
+      run: |
+        BUILD_VERSION=${{  github.ref_name }}
+        echo Build version is: ${BUILD_VERSION}
+        IMAGE_FULL=${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_REPOSITORY }}/${{ env.IMAGE_NAME }}:${BUILD_VERSION}
+        echo Building image: ${IMAGE_FULL}
+        echo "${{ secrets.REGISTRY_PASSWORD }}" | docker login --username="${{ secrets.REGISTRY_USERNAME }}" --password-stdin ${{ env.IMAGE_REGISTRY }}
+        
+        cd exporter/app-exporter
+        docker build --build-arg BUILD_VERSION=${BUILD_VERSION} -f ./Dockerfile -t ${IMAGE_FULL} .
+        docker push ${IMAGE_FULL}
