@@ -70,17 +70,15 @@ func (e *AppExporterService) export(rw http.ResponseWriter, req *http.Request) {
 				return
 			}
 
+			err = exporterConfig.Validate()
+			if err != nil {
+				e.handleError("Invalid configuration: %s", err, rw, exporterConfig)
+				return
+			}
 			e.logger.Infof("Running export request: %# v", string(reqBody))
 			connectionStatus := connect.ConnectCluster(&exporterConfig.Cluster, e.logger)
 			if connectionStatus.Error != nil {
-				message := fmt.Sprintf("Cannot connect to given cluster: %s", connectionStatus.Error)
-				e.logger.Errorf(message)
-				rw.WriteHeader(http.StatusOK)
-				rw.Header().Set("Content-Type", "application/json")
-				output := app.AppExporterOutput{ApplicationName: exporterConfig.Application.Name, Status: utils.Failed.String(),
-					ErrorMessage: message}
-				yamlOutput, _ := json.Marshal(output)
-				rw.Write([]byte(yamlOutput))
+				e.handleError("Cannot connect to given cluster: %s", connectionStatus.Error, rw, exporterConfig)
 				return
 			}
 
@@ -104,6 +102,18 @@ func (e *AppExporterService) export(rw http.ResponseWriter, req *http.Request) {
 		http.NotFound(rw, req)
 		return
 	}
+}
+
+func (e *AppExporterService) handleError(message string, err error, rw http.ResponseWriter, exporterConfig *config.ExporterConfig) {
+	message = fmt.Sprintf(message, err.Error())
+	e.logger.Errorf(message)
+	rw.WriteHeader(http.StatusOK)
+	rw.Header().Set("Content-Type", "application/json")
+	output := app.AppExporterOutput{ApplicationName: exporterConfig.Application.Name, Status: utils.Failed.String(),
+		ErrorMessage: message}
+	yamlOutput, _ := json.Marshal(output)
+	rw.Write([]byte(yamlOutput))
+
 }
 func (e *AppExporterService) info(rw http.ResponseWriter, req *http.Request) {
 	if req.URL.Path == "/export/application" {
