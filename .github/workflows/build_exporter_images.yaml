@@ -1,12 +1,10 @@
-
 name: Build exporter images
 on: [workflow_dispatch]
 env:
   IMAGE_REGISTRY: quay.io
+  IMAGE_NAME: saasi-app-exporter
   IMAGE_REPOSITORY: ecosystem-appeng
   APP_EXPORTER_IMAGE_NAME: saasi-app-exporter
-  REGISTRY_USERNAME: dmartino
-  REGISTRY_PASSWORD: xFR2e3MByK6kCn68USnz9/rgv3f7XNN5kj/phla2CcUxkgkG0MPAzC36dqrQ/ctvR1lIxWx6yvyr6Cb/6Apv3w==
 jobs:
   build-image-and-push:
     runs-on: ubuntu-latest
