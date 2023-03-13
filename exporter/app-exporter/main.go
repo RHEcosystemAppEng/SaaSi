@@ -107,7 +107,7 @@ func (e *AppExporterService) export(rw http.ResponseWriter, req *http.Request) {
 func (e *AppExporterService) handleError(message string, err error, rw http.ResponseWriter, exporterConfig *config.ExporterConfig) {
 	message = fmt.Sprintf(message, err.Error())
 	e.logger.Errorf(message)
-	rw.WriteHeader(http.StatusOK)
+	rw.WriteHeader(http.StatusBadRequest)
 	rw.Header().Set("Content-Type", "application/json")
 	output := app.AppExporterOutput{ApplicationName: exporterConfig.Application.Name, Status: utils.Failed.String(),
 		ErrorMessage: message}
