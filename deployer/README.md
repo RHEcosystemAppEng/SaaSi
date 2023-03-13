@@ -6,6 +6,10 @@ A Golang CLI tool to deploy configurations extracted from a live OpenShit/Kubern
   (e.g. IP addresses, status, ...)
 * Need [Ansible](https://docs.ansible.com/ansible/latest/installation_guide/intro_installation.html) installed in order to run playbook to Provision an OCP Cluster on AWS.
 * Need [Jinja](https://pypi.org/project/Jinja2/) template engine Binary in order to render template that will become yaml parameters file of the ansible playbook.
+  If you got [Snapd](https://snapcraft.io/docs/installing-snapd) Installed, then it's easier to install it:
+  ```shell
+  sudo snap install j2
+  ```
 * Need [htpasswd](https://command-not-found.com/htpasswd) util in order to define identity provider in OCP cluster
 * need [Openshift Cli Tool](https://console.redhat.com/openshift/downloads)
 * Need to download a [pull secret](https://console.redhat.com/openshift/install/pull-secret) for the Openshift installer, and copy paste it into [manifest.j2](./infra/templates/manifest.j2) pullSecret key
@@ -34,6 +38,8 @@ pwd
 git rev-parse --show-toplevel
 ```
 the two commands will bring the same directory only if you're in root directory of repo.
+
+Note: All dependencies **must** be installed on the environment/container where the deployer application is running!. 
 
 ## Installer configuration
 The `deployer` runs using a configuration to specify how to install the packaged configuration:
@@ -214,10 +220,17 @@ Available options:
 * Manage mandatory params
   * If __DEFAULT__ stop installation
 
+## Next Tasks
+
+* Containerize the deployer application with all of its dependencies.
+* Ideally create a **service** so the all functionality will be triggered by an event( http call, received appropriate message, applying custom resource)
+* With respect to applying custom resource to cluster, at the next stage make this service as an API with a controller and reconciliation logic that will apply custom resource that is equivalent to deployer configuration we have today, potentially to be part of an operator ( SaaSi operator? )
+
 ## Open points
 * Which user permissions are needed to install
 * Need to propagate logs of openshift installer to console output of deployer application , to bring an enhanced user experience.
 * Need to add an optional lifecycle hook, that will be placed at the point of time that is between provisioning the cluster and deploying the application , that its implementation will be provided by user, this will give the user an option to deploy dependencies in a form of script location, that will be passed as command line argument - This script will take care of installing all the application' dependencies that weren't migrated from source cluster( for example, kafka cluster, databases, etc).
-* Need to add cluster config parameter to the input yaml file, of the pull secret value that will be injected into [manifest.yaml](./infra/templates/manifest.j2)  
+* Need to add cluster config parameter to the input yaml file of the pull secret value that will be injected into [manifest.yaml](./infra/templates/manifest.j2), it suppose to be part of the logic.
+
 
 
