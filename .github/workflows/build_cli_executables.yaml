@@ -1,0 +1,44 @@
+name: Build executable and images
+on:
+  release:
+    branches: [ "main" ]
+    types: [published]
+    tags:
+    - 'v*'
+env:
+  IMAGE_REGISTRY: quay.io
+  IMAGE_REPOSITORY: dmartino
+  IMAGE_NAME: application-exporter
+jobs:
+  build-binaries-and-publish:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up Go
+      uses: actions/setup-go@v3
+      with:
+        go-version: 1.18
+    - name: Build binaries
+      run: |
+        BUILD_VERSION=${{  github.ref_name }}
+        echo Build version is: ${BUILD_VERSION}
+        mkdir bin
+        GOOS=windows GOARCH=386 go build -o bin/inventory-exporter-win-386.exe -ldflags "-X main.BuildVersion=${BUILD_VERSION}" main.go
+        GOOS=windows GOARCH=amd64 go build -o bin/inventory-exporter-win-amd64.exe -ldflags "-X main.BuildVersion=${BUILD_VERSION}" main.go
+        GOOS=darwin GOARCH=amd64 go build -o bin/inventory-exporter-darwin-amd64 -ldflags "-X main.BuildVersion=${BUILD_VERSION}" main.go
+        GOOS=darwin GOARCH=arm64 go build -o bin/inventory-exporter-darwin-arm64 -ldflags "-X main.BuildVersion=${BUILD_VERSION}" main.go
+        tar -cvf inventory-exporter.tar --preserve-permissions bin/
+    - name: Get release
+      id: get_release
+      uses: bruceadams/get-release@v1.2.3
+      env:
+        GITHUB_TOKEN: ${{ github.token }}
+    - name: Upload binaries
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.get_release.outputs.upload_url }}
+        asset_path: ./inventory-exporter.tar
+        asset_name: inventory-exporter.tar
+        asset_content_type: application/x-tar

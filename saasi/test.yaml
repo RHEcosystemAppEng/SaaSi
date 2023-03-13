@@ -1,0 +1,9 @@
+cluster:
+  clusterId: demo
+  server: https://api.ocp-dev01.lab.eng.tlv2.redhat.com:6443
+  # Must be valid at the moment we export the configuration
+  token: sha256~seaOMvkYDz48GQlklk1K8GVeMMYwu1-ia3-eLikpXVA
+application:
+  name: crane
+  namespaces:
+    - name: dmartino-orig-1

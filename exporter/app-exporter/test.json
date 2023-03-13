@@ -1,0 +1,27 @@
+{
+  "cluster": {
+    "clusterId": "demo",
+    "server": "https://api.ocp-dev01.lab.eng.tlv2.redhat.com:6443",
+    "token": "sha256~seaOMvkYDz48GQlklk1K8GVeMMYwu1-ia3-eLikpXVA"
+  },
+  "application": {
+    "name": "stress-test",
+    "namespaces": [
+      {
+        "name": "ms-hello-serverless"
+      },
+      {
+        "name": "lab-monitor"
+      },
+      {
+        "name": "kafka"
+      },
+      {
+        "name": "depdraw"
+      },
+      {
+        "name": "ansible-automation-platform"
+      }
+    ]
+  }
+}
