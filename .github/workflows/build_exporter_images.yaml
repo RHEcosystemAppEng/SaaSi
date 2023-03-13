@@ -1,6 +1,5 @@
 name: Build exporter images
-on:
-  workflow_dispatch:
+on: [workflow_dispatch]
 env:
   IMAGE_REGISTRY: quay.io
   IMAGE_REPOSITORY: ecosystem-appeng
