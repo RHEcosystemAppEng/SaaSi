@@ -34,7 +34,7 @@ type KubeConnection struct {
 	KubeConfigPath string
 }
 
-func ConnectToCluster(clusterConfig config.ClusterConfig) *KubeConnection {
+func ConnectToCluster(clusterConfig config.ClusterConfig, authByToken bool) *KubeConnection {
 	// init kube connection
 	conn := KubeConnection{}
 
@@ -42,14 +42,20 @@ func ConnectToCluster(clusterConfig config.ClusterConfig) *KubeConnection {
 	conn.KubeConfig = &rest.Config{}
 
 	// set credentials in kube config
-	conn.KubeConfig.BearerToken = clusterConfig.Token
 	conn.KubeConfig.Host = clusterConfig.Server
+	if authByToken {
+    	conn.KubeConfig.BearerToken = clusterConfig.Token
+	} else
+	{
+		conn.KubeConfig.Password = clusterConfig.Token
+		conn.KubeConfig.Username = clusterConfig.User
+	}
 	conn.KubeConfig.Insecure = true
 
 	// generate kube config
-	conn.generateKubeConfiguration()
+	conn.generateKubeConfiguration(authByToken)
 
-	// discover supportd resources in the api server
+	// discover supported resources in the api server
 	discoveryClient, err = discovery.NewDiscoveryClientForConfig(conn.KubeConfig)
 	if err != nil {
 		log.Fatalf("Cannot connect to given cluster: %s", err)
@@ -66,7 +72,7 @@ func ConnectToCluster(clusterConfig config.ClusterConfig) *KubeConnection {
 	return &conn
 }
 
-func (conn *KubeConnection) generateKubeConfiguration() {
+func (conn *KubeConnection) generateKubeConfiguration(authByToken bool)  {
 
 	// define cluster configuration
 	clusters := make(map[string]*api.Cluster)
@@ -85,9 +91,19 @@ func (conn *KubeConnection) generateKubeConfiguration() {
 	}
 
 	// define auth info configuration
-	authinfos := make(map[string]*api.AuthInfo)
-	authinfos[DEFAULT_AUTH_INFO] = &api.AuthInfo{
-		Token: conn.KubeConfig.BearerToken,
+	var authinfos map[string]*api.AuthInfo
+	if authByToken {
+		authinfos = make(map[string]*api.AuthInfo)
+		authinfos[DEFAULT_AUTH_INFO] = &api.AuthInfo{
+			Token: conn.KubeConfig.BearerToken,
+		  }
+		  //otherwise, auth by basic authentication
+	} else {
+			authinfos = make(map[string]*api.AuthInfo)
+			authinfos[DEFAULT_AUTH_INFO] = &api.AuthInfo{
+				Username: conn.KubeConfig.Username,
+				Password: conn.KubeConfig.Password,
+		}
 	}
 
 	// define client config configuration
