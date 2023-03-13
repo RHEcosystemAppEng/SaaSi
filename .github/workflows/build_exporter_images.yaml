@@ -2,6 +2,7 @@ name: Build exporter images
 on: [workflow_dispatch]
 env:
   IMAGE_REGISTRY: quay.io
+  IMAGE_NAME: saasi-app-exporter
   IMAGE_REPOSITORY: ecosystem-appeng
   APP_EXPORTER_IMAGE_NAME: saasi-app-exporter
 jobs:

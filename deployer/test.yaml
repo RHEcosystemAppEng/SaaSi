@@ -1,0 +1,22 @@
+deployer:
+  cluster:
+    clusterId: demo
+    server: https://api.ocp-dev01.lab.eng.tlv2.redhat.com:6443
+    # Must be valid at the moment we export the configuration
+    token: sha256~ZKyW5PBMDgpQaNI59OCTnosQPKzi5nKQTu4pUHaieFc
+  application:
+    name: crane
+    namespaceMappingFormat: "%s-test"
+    namespaces:
+      - name: dmartino-orig-1
+        secrets:
+        - secret: devfile-sample-go-basic-git-generic-webhook-secret
+          params:
+          - name: WebHookSecretKey
+            value: M2VhNjk1NjQzNTJjYmUzOQ==
+      - name: dmartino-orig-2
+        secrets:
+        - secret: code-with-quarkus-generic-webhook-secret
+          params:
+          - name: WebHookSecretKey
+            value: MTJiNjg4YmM3MDExMjgyYw==

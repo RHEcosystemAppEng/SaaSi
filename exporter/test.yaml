@@ -1,0 +1,10 @@
+exporter:
+  cluster:
+    clusterId: demo
+    server: https://api.sandbox-m2.ll9k.p1.openshiftapps.com:6443
+    # Must be valid at the moment we export the configuration
+    token: sha256~D6I18mu_sl8i4--EnDJKFI_QOW6pbENX6z-PBFtVUfs
+  application:
+    name: test
+    namespaces:
+      - name: dmartino-dev

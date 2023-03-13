@@ -1,0 +1,42 @@
+apiVersion: saasi/v1
+kind: ClusterDeployment
+spec:
+  ownerReferences:
+  - apiVersion: saasi/v1
+    kind: SaasiDeployer
+    name: example
+    uid: UUID
+status:
+  conditions:
+  - lastTransitionTime: "2023-01-10T16:51:24Z"
+    lastUpdateTime: "2023-01-11T10:17:09Z"
+    message: Cluster deployment TARGET_CLUSTERID scheduled to start.
+    reason: NewRequest
+    status: "True"
+    type: Scheduled
+  - lastTransitionTime: "t1"
+    # This one can change later if we want to provide some progressindicator for a given state/condition
+    lastUpdateTime: "t1"
+    message: Cluster deployment TARGET_CLUSTERID started.
+    reason: Started
+    status: "True"
+    type: Deploying
+  - lastTransitionTime: "t2"
+    lastUpdateTime: "t2"
+    message: Cluster deployment TARGET_CLUSTERID scheduled to start.
+    reason: Completed
+    status: "True"
+    type: Deployed
+  # Or, in case of failure
+  - lastTransitionTime: "t2"
+    lastUpdateTime: "t2"
+    message: Authentication error.
+    reason: Failed
+    status: "False"
+    type: Deployed
+  # Or, in case is waiting to complete
+  - lastTransitionTime: "t2"
+    lastUpdateTime: "t2"
+    reason: Started
+    status: "False"
+    type: Deployed

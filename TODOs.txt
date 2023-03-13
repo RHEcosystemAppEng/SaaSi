@@ -1,0 +1,36 @@
+INVESTIGATE:
+pre-install Operator
+use CR to store installation state and watch them
+
+DOING:
+XX Add K8s to diagram (source)
+XX Secrets: Hide all default values
+XX DO NOT export Secret values, only Keys
+
+XX Replace Move2Kube with manual creation of kustomize base and skeletons
+XX Generate automatic skeleton of Secret keys
+XX Remove move2kube from diagram
+XX Tree of output structure with explanation
+
+XX one custom.env per configmap
+XX Avoid oc extract! Remove configMapGenerator from base kustomize
+
+XX manage mandatory params
+XX - remove from base ConfigMaps
+XX - include __MANDATORY__ in .env files
+
+oc adm policy add-scc-to-user -n myholdings -z holdings anyuid-infinity-ms-infinity-msuat
+=======
+TODO:
+parse namespace and remove only if needed
+merge 2 NS in one kustomize
+remove crane folders at the end or put in a different parent
+
+## cluster role binding
+
+
+
+for i in output/Infinity/holdings/output/resources/holdings/*.bak
+do
+mv -- "$i" "${i%.bak}"
+done
