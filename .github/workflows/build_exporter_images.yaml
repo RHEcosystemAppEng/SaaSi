@@ -1,5 +1,12 @@
 name: Build exporter images
-on: [workflow_dispatch]
+on: 
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Build version
+        default: dev
+        required: true
+        type:  string
 env:
   IMAGE_REGISTRY: quay.io
   IMAGE_NAME: saasi-app-exporter
