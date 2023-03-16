@@ -1,0 +1,48 @@
+kind: Pod
+apiVersion: v1
+metadata:
+  name: saasi-infra-exporter
+  labels:
+    app: saasi-infra-exporter
+spec:
+  restartPolicy: Always
+  serviceAccountName: default
+  containers:
+  - name: saasi-infra-exporter
+    env:
+    - name: OUTPUT_DIR
+      value: /tmp/output
+    ports:
+    - containerPort: 8080
+      protocol: TCP
+    image: 'quay.io/ecosystem-appeng/saasi-infra-exporter:0.1'
+    imagePullPolicy: Always
+    resources:
+      limits:
+        cpu: '300m'
+        memory: '500Mi'
+  serviceAccount: default
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: saasi-infra-exporter
+spec:
+  ports:
+  - port: 8080
+    protocol: TCP
+    targetPort: 8080
+  selector:
+    app: saasi-infra-exporter
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: saasi-infra-exporter
+spec:
+  path: /
+  port:
+    targetPort: 8080
+  to:
+    kind: Service
+    name: saasi-infra-exporter
