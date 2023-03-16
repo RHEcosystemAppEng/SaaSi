@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 # This script collects and print into a ENV file the required vars for the manifest template processing
 # WARNING!: This requires an available connection configured by OC CLI
 

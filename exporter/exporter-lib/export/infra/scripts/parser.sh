@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 # This script reads the cluster config ENV vars and the customizations ENV vars to generate the manifest.yaml file to create the cluster infrastructure
 
 
