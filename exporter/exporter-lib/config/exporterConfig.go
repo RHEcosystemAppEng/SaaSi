@@ -92,18 +92,30 @@ func (c *Config) ReadExporterConfig() *ExporterConfig {
 	return &exporterConfig
 }
 
+func (c *ClusterConfig) ValidateClusterConfig() error {
+	if reflect.ValueOf(c).IsZero() {
+		return errors.New("missing cluster configuration")
+	} else {
+		if c.ClusterId == "" {
+			return errors.New("missing clusterId configuration")
+		}
+		if c.Server == "" {
+			return errors.New("missing server configuration")
+		}
+		if c.Token == "" {
+			return errors.New("missing token configuration")
+		}
+	}
+	return nil
+}
+
 func (e *ExporterConfig) Validate() error {
 	if reflect.ValueOf(e.Cluster).IsZero() {
 		return errors.New("missing cluster configuration")
 	} else {
-		if e.Cluster.ClusterId == "" {
-			return errors.New("missing clusterId configuration")
-		}
-		if e.Cluster.Server == "" {
-			return errors.New("missing server configuration")
-		}
-		if e.Cluster.Token == "" {
-			return errors.New("missing token configuration")
+		err := e.Cluster.ValidateClusterConfig()
+		if err != nil {
+			return err
 		}
 	}
 	if reflect.ValueOf(e.Application).IsZero() {

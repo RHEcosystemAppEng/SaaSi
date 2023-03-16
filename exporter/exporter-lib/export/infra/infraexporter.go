@@ -18,8 +18,8 @@ type InfraExporterOutput struct {
 	Location     string `json:"location"`
 }
 
-func NewInfraExporterFromConfig(config *config.Config, exporterConfig *config.ExporterConfig, connectionStatus *connect.ConnectionStatus, logger *logrus.Logger) *InfraExporter {
-	exporter := InfraExporter{infraContext: NewInfraContextFromConfig(config, exporterConfig, connectionStatus, logger)}
+func NewInfraExporterFromConfig(config *config.Config, clusterConfig *config.ClusterConfig, connectionStatus *connect.ConnectionStatus, logger *logrus.Logger) *InfraExporter {
+	exporter := InfraExporter{infraContext: NewInfraContextFromConfig(config, clusterConfig, connectionStatus, logger)}
 
 	return &exporter
 }
