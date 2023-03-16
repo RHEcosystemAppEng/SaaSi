@@ -9,9 +9,9 @@ on:
         type:  string
 env:
   IMAGE_REGISTRY: quay.io
-  IMAGE_NAME: saasi-app-exporter
   IMAGE_REPOSITORY: ecosystem-appeng
   APP_EXPORTER_IMAGE_NAME: saasi-app-exporter
+  INFRA_EXPORTER_IMAGE_NAME: saasi-infra-exporter
 jobs:
   build-image-and-push:
     runs-on: ubuntu-latest
@@ -21,10 +21,16 @@ jobs:
       run: |
         BUILD_VERSION=${{  inputs.version }}
         echo Build version is: ${BUILD_VERSION}
-        IMAGE_FULL=${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_REPOSITORY }}/${{ env.IMAGE_NAME }}:${BUILD_VERSION}
-        echo Building image: ${IMAGE_FULL}
         echo "${{ secrets.REGISTRY_PASSWORD }}" | docker login --username="${{ secrets.REGISTRY_USERNAME }}" --password-stdin ${{ env.IMAGE_REGISTRY }}
         
         cd exporter/app-exporter
-        docker build --build-arg BUILD_VERSION=${BUILD_VERSION} -f ./Dockerfile -t ${IMAGE_FULL} .
-        docker push ${IMAGE_FULL}
+        APP_EXPORTER_IMAGE_FULL=${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_REPOSITORY }}/${{ env.APP_EXPORTER_IMAGE_NAME }}:${BUILD_VERSION}
+        echo Building image: ${APP_EXPORTER_IMAGE_FULL}
+        docker build --build-arg BUILD_VERSION=${BUILD_VERSION} -f ./Dockerfile -t ${APP_EXPORTER_IMAGE_FULL} .
+        docker push ${APP_EXPORTER_IMAGE_FULL}
+
+        cd ../infra-exporter
+        INFRA_EXPORTER_IMAGE_FULL=${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_REPOSITORY }}/${{ env.INFRA_EXPORTER_IMAGE_NAME }}:${BUILD_VERSION}
+        echo Building image: ${APP_EXPORTER_IMAGE_FULL}
+        docker build --build-arg BUILD_VERSION=${BUILD_VERSION} -f ./Dockerfile -t ${INFRA_EXPORTER_IMAGE_FULL} .
+        docker push ${INFRA_EXPORTER_IMAGE_FULL}

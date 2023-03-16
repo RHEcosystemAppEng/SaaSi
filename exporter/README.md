@@ -77,8 +77,6 @@ Available options:
         Application configuration file
   -i string
         Root installation folder (shorthand) (default "<CURRENT_DIR>")
-  -install-dir string
-        Root installation folder (default "<CURRENT_DIR>")
   -o string
         Root output folder (shorthand) (default "<CURRENT_DIR>/output")
   -output-dir string

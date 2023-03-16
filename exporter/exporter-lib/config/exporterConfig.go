@@ -14,10 +14,9 @@ import (
 )
 
 type Config struct {
-	RootInstallationFolder string
-	RootOutputFolder       string
-	Debug                  bool
-	exportConfigFile       string
+	RootOutputFolder string
+	Debug            bool
+	exportConfigFile string
 }
 
 type ExporterConfig struct {
@@ -54,9 +53,6 @@ func ReadConfigFromFlags() *Config {
 	defaultOutput := filepath.Join(defaultRoot, "output")
 
 	config := Config{}
-	var rootFolder string
-	flag.StringVar(&rootFolder, "install-dir", defaultRoot, "Root installation folder")
-	flag.StringVar(&rootFolder, "i", defaultRoot, "Root installation folder (shorthand)")
 	var outputFolder string
 	flag.StringVar(&outputFolder, "output-dir", defaultOutput, "Root output folder")
 	flag.StringVar(&outputFolder, "o", defaultOutput, "Root output folder (shorthand)")
@@ -64,7 +60,6 @@ func ReadConfigFromFlags() *Config {
 	flag.BoolVar(&config.Debug, "debug", false, "Debug the command by printing more information")
 	flag.Parse()
 
-	config.RootInstallationFolder = rootFolder
 	config.RootOutputFolder = outputFolder
 	return &config
 }
@@ -97,18 +92,30 @@ func (c *Config) ReadExporterConfig() *ExporterConfig {
 	return &exporterConfig
 }
 
+func (c *ClusterConfig) ValidateClusterConfig() error {
+	if reflect.ValueOf(c).IsZero() {
+		return errors.New("missing cluster configuration")
+	} else {
+		if c.ClusterId == "" {
+			return errors.New("missing clusterId configuration")
+		}
+		if c.Server == "" {
+			return errors.New("missing server configuration")
+		}
+		if c.Token == "" {
+			return errors.New("missing token configuration")
+		}
+	}
+	return nil
+}
+
 func (e *ExporterConfig) Validate() error {
 	if reflect.ValueOf(e.Cluster).IsZero() {
 		return errors.New("missing cluster configuration")
 	} else {
-		if e.Cluster.ClusterId == "" {
-			return errors.New("missing clusterId configuration")
-		}
-		if e.Cluster.Server == "" {
-			return errors.New("missing server configuration")
-		}
-		if e.Cluster.Token == "" {
-			return errors.New("missing token configuration")
+		err := e.Cluster.ValidateClusterConfig()
+		if err != nil {
+			return err
 		}
 	}
 	if reflect.ValueOf(e.Application).IsZero() {
