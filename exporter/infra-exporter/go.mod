@@ -9,7 +9,7 @@ require (
 	gopkg.in/yaml.v2 v2.4.0
 )
 
-replace github.com/RHEcosystemAppEng/SaaSi/exporter/exporter-lib => ../exporter-lib
+// replace github.com/RHEcosystemAppEng/SaaSi/exporter/exporter-lib => ../exporter-lib
 
 require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
