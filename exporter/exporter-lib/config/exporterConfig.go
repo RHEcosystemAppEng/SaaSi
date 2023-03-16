@@ -14,10 +14,9 @@ import (
 )
 
 type Config struct {
-	RootInstallationFolder string
-	RootOutputFolder       string
-	Debug                  bool
-	exportConfigFile       string
+	RootOutputFolder string
+	Debug            bool
+	exportConfigFile string
 }
 
 type ExporterConfig struct {
@@ -54,9 +53,6 @@ func ReadConfigFromFlags() *Config {
 	defaultOutput := filepath.Join(defaultRoot, "output")
 
 	config := Config{}
-	var rootFolder string
-	flag.StringVar(&rootFolder, "install-dir", defaultRoot, "Root installation folder")
-	flag.StringVar(&rootFolder, "i", defaultRoot, "Root installation folder (shorthand)")
 	var outputFolder string
 	flag.StringVar(&outputFolder, "output-dir", defaultOutput, "Root output folder")
 	flag.StringVar(&outputFolder, "o", defaultOutput, "Root output folder (shorthand)")
@@ -64,7 +60,6 @@ func ReadConfigFromFlags() *Config {
 	flag.BoolVar(&config.Debug, "debug", false, "Debug the command by printing more information")
 	flag.Parse()
 
-	config.RootInstallationFolder = rootFolder
 	config.RootOutputFolder = outputFolder
 	return &config
 }
