@@ -18,9 +18,10 @@ type Exporter struct {
 	logger        *logrus.Logger
 }
 type ExporterOutput struct {
-	Status       string                `json:"status"`
-	ErrorMessage string                `json:"errorMessage"`
-	AppExporter  app.AppExporterOutput `json:"appExporter"`
+	Status        string                    `json:"status"`
+	ErrorMessage  string                    `json:"errorMessage"`
+	AppExporter   app.AppExporterOutput     `json:"appExporter"`
+	InfraExporter infra.InfraExporterOutput `json:"infraExporter"`
 }
 
 func NewExporterFromConfig(config *config.Config) *Exporter {
@@ -49,17 +50,15 @@ func (e *Exporter) Export(exporterConfig *config.ExporterConfig) ExporterOutput 
 	e.infraExporter = infra.NewInfraExporterFromConfig(e.config, exporterConfig, connectionStatus, e.logger)
 	e.appExporter = app.NewAppExporterFromConfig(e.config, exporterConfig, connectionStatus, e.logger)
 
-	// TODO add InfraOutput struct
-	err = e.infraExporter.Export()
-	if err != nil {
+	infraExporterOutput := e.infraExporter.Export()
+	output.InfraExporter = infraExporterOutput
+	if infraExporterOutput.Status == utils.Failed.String() {
 		output.Status = utils.Failed.String()
-		output.ErrorMessage = err.Error()
 		return output
 	}
 
 	appExporterOutput := e.appExporter.Export()
 	output.AppExporter = appExporterOutput
 	output.Status = appExporterOutput.Status
-
 	return output
 }
