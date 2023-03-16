@@ -47,7 +47,7 @@ func (e *Exporter) Export(exporterConfig *config.ExporterConfig) ExporterOutput 
 		return output
 	}
 
-	e.infraExporter = infra.NewInfraExporterFromConfig(e.config, exporterConfig, connectionStatus, e.logger)
+	e.infraExporter = infra.NewInfraExporterFromConfig(e.config, &exporterConfig.Cluster, connectionStatus, e.logger)
 	e.appExporter = app.NewAppExporterFromConfig(e.config, exporterConfig, connectionStatus, e.logger)
 
 	infraExporterOutput := e.infraExporter.Export()
