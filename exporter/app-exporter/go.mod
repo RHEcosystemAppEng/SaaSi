@@ -3,7 +3,7 @@ module github.com/RHEcosystemAppEng/SaaSi/exporter/app-exporter
 go 1.19
 
 require (
-	github.com/RHEcosystemAppEng/SaaSi/exporter/exporter-lib v0.0.0-20230313134729-0c5d92f51475
+	github.com/RHEcosystemAppEng/SaaSi/exporter/exporter-lib v0.0.0-20230316145240-80f8f364fdcf
 	github.com/gorilla/mux v1.8.0
 	github.com/sirupsen/logrus v1.8.1
 	gopkg.in/yaml.v2 v2.4.0
