@@ -10,11 +10,11 @@ on:
 env:
   IMAGE_REGISTRY: quay.io
   IMAGE_REPOSITORY: ecosystem-appeng
-  APP_EXPORTER_IMAGE_NAME: saasi-app-exporter
-  INFRA_EXPORTER_IMAGE_NAME: saasi-infra-exporter
 jobs:
-  build-image-and-push:
+  build-image-and-push-app-exporter:
     runs-on: ubuntu-latest
+    env:
+      IMAGE_NAME: saasi-app-exporter
     steps:
     - uses: actions/checkout@v3
     - name: Build Docker image and publish
@@ -24,13 +24,21 @@ jobs:
         echo "${{ secrets.REGISTRY_PASSWORD }}" | docker login --username="${{ secrets.REGISTRY_USERNAME }}" --password-stdin ${{ env.IMAGE_REGISTRY }}
         
         cd exporter/app-exporter
-        APP_EXPORTER_IMAGE_FULL=${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_REPOSITORY }}/${{ env.APP_EXPORTER_IMAGE_NAME }}:${BUILD_VERSION}
-        echo Building image: ${APP_EXPORTER_IMAGE_FULL}
-        docker build --build-arg BUILD_VERSION=${BUILD_VERSION} -f ./Dockerfile -t ${APP_EXPORTER_IMAGE_FULL} .
-        docker push ${APP_EXPORTER_IMAGE_FULL}
+        IMAGE_FULL=${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_REPOSITORY }}/${{ env.IMAGE_NAME }}:${BUILD_VERSION}
+        echo Building image: ${IMAGE_FULL}
+        docker build --build-arg BUILD_VERSION=${BUILD_VERSION} -f ./Dockerfile -t ${IMAGE_FULL} .
+        docker push ${IMAGE_FULL}
 
-        cd ../infra-exporter
-        INFRA_EXPORTER_IMAGE_FULL=${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_REPOSITORY }}/${{ env.INFRA_EXPORTER_IMAGE_NAME }}:${BUILD_VERSION}
+  build-image-and-push-infra-exporter:
+    runs-on: ubuntu-latest
+    env:
+      IMAGE_NAME: saasi-infra-exporter
+    steps:
+    - uses: actions/checkout@v3
+    - name: Build Docker image and publish
+      run: |
+        cd exporter/infra-exporter
+        IMAGE_FULL=${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_REPOSITORY }}/${{ env.IMAGE_NAME }}:${BUILD_VERSION}
         echo Building image: ${APP_EXPORTER_IMAGE_FULL}
-        docker build --build-arg BUILD_VERSION=${BUILD_VERSION} -f ./Dockerfile -t ${INFRA_EXPORTER_IMAGE_FULL} .
-        docker push ${INFRA_EXPORTER_IMAGE_FULL}
+        docker build --build-arg BUILD_VERSION=${BUILD_VERSION} -f ./Dockerfile -t ${IMAGE_FULL} .
+        docker push ${IMAGE_FULL}
