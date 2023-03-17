@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"strconv"
 
 	"github.com/RHEcosystemAppEng/SaaSi/exporter/exporter-lib/config"
 	"github.com/RHEcosystemAppEng/SaaSi/exporter/exporter-lib/connect"
@@ -42,7 +43,16 @@ func main() {
 	router.Path("/export/infra").HandlerFunc(infraExporterService.info).Methods("GET")
 
 	host := "0.0.0.0"
-	url := fmt.Sprintf("%s:%d", host, 8080)
+	portString, ok := os.LookupEnv("PORT")
+	if !ok {
+		portString = "8080"
+	}
+	port, err := strconv.Atoi(portString)
+	if err != nil {
+		infraExporterService.logger.Fatalf("Invalid port %s configured", portString)
+	}
+
+	url := fmt.Sprintf("%s:%d", host, port)
 	infraExporterService.logger.Infof("Starting listener as %s", url)
 	if err := http.ListenAndServe(url, router); err != nil {
 		infraExporterService.logger.Fatal(err)

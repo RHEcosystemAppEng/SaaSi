@@ -17,7 +17,10 @@ Launch the application locally as:
 OUTPUT_DIR=/tmp/output DEBUG=True go run main.go
 ```
 
-The server listens on port `8080` (not configurable).
+The server listens on port `8080` or to a configured port number, as in:
+```bash
+PORT=9090 OUTPUT_DIR=/tmp/output DEBUG=True go run main.go
+```
 
 ## Build the container image
 Run the following to build the container image with a given version and push it to the remote registry (if needed):
