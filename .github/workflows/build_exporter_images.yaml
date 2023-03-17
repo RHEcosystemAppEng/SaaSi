@@ -37,8 +37,12 @@ jobs:
     - uses: actions/checkout@v3
     - name: Build Docker image and publish
       run: |
+        BUILD_VERSION=${{  inputs.version }}
+        echo Build version is: ${BUILD_VERSION}
+        echo "${{ secrets.REGISTRY_PASSWORD }}" | docker login --username="${{ secrets.REGISTRY_USERNAME }}" --password-stdin ${{ env.IMAGE_REGISTRY }}
+
         cd exporter/infra-exporter
         IMAGE_FULL=${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_REPOSITORY }}/${{ env.IMAGE_NAME }}:${BUILD_VERSION}
-        echo Building image: ${APP_EXPORTER_IMAGE_FULL}
+        echo Building image: ${IMAGE_FULL}
         docker build --build-arg BUILD_VERSION=${BUILD_VERSION} -f ./Dockerfile -t ${IMAGE_FULL} .
         docker push ${IMAGE_FULL}
