@@ -13,8 +13,7 @@ COPY *.go ./
 RUN ls -lh /tmp/
 RUN CGO_ENABLED=0 GOOS=linux go build -mod=readonly  -v -o exporter -ldflags "-X main.BuildVersion=$BUILD_VERSION"
 
-FROM alpine:3 as runner
-RUN apk add --no-cache ca-certificates
+FROM quay.io/openshift/origin-cli:latest as runner
 COPY --from=builder /app/exporter /go/bin/exporter
 
 ENV OUTPUT_DIR=/tmp/output
