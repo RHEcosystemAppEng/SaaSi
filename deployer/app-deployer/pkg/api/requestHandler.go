@@ -6,6 +6,7 @@ import (
 
 	"github.com/RHEcosystemAppEng/SaaSi/deployer/deployer-lib/config"
 	"github.com/gorilla/mux"
+	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -21,16 +22,16 @@ var (
 	router = mux.NewRouter()
 )
 
-func HandleRequests(args *config.Args) {
+func HandleRequests(args *config.Args, logger *logrus.Logger) {
 
-	router.Path(APP_DEPLOYER_PATH).HandlerFunc(deploy(args)).Methods(POST)
+	// define routes
+	router.Path(APP_DEPLOYER_PATH).HandlerFunc(deploy(args, logger)).Methods(POST)
 	router.Path(APP_DEPLOYER_PATH).HandlerFunc(info).Methods(GET)
 
 	// init hosting URL
 	url := fmt.Sprintf("%s:%d", HOST, PORT)
-	// appDeployerService.logger.Infof("Starting listener as %s", url)
+	logger.Infof("Starting listener as %s", url)
 	if err = http.ListenAndServe(url, router); err != nil {
-		// appDeployerService.logger.Fatal(err)
-		fmt.Print() //PLACEHOLDER
+		logger.Fatal(err)
 	}
 }

@@ -13,6 +13,7 @@ import (
 	"github.com/RHEcosystemAppEng/SaaSi/deployer/deployer-lib/deployer/app/deployer"
 	"github.com/RHEcosystemAppEng/SaaSi/deployer/deployer-lib/deployer/app/packager"
 	"github.com/RHEcosystemAppEng/SaaSi/deployer/deployer-lib/utils"
+	"github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v2"
 )
 
@@ -29,7 +30,7 @@ type applicationInfo struct {
 	Status  string `yaml:"status"`
 }
 
-func deploy(args *config.Args) http.HandlerFunc {
+func deploy(args *config.Args, logger *logrus.Logger) http.HandlerFunc {
 	return func(rw http.ResponseWriter, req *http.Request) {
 		// validate requested path
 		if req.URL.Path != APP_DEPLOYER_PATH {
@@ -49,7 +50,7 @@ func deploy(args *config.Args) http.HandlerFunc {
 		reqBody, err := io.ReadAll(req.Body)
 		if err != nil {
 			message := fmt.Sprintf("Cannot execute deploy service, IO error while reading data file: %s", err.Error())
-			// e.logger.Errorf(message)
+			logger.Errorf(message)
 			http.Error(rw, message, http.StatusUnprocessableEntity)
 			return
 		}
@@ -59,8 +60,8 @@ func deploy(args *config.Args) http.HandlerFunc {
 		err = yaml.Unmarshal(reqBody, deployerConfig)
 		if err != nil {
 			message := fmt.Sprintf("Cannot unmarshal request body to expected model: %s", err.Error())
-			// e.logger.Errorf(message)
-			// e.logger.Errorf("Request body: %# v", string(reqBody))
+			logger.Errorf(message)
+			logger.Errorf("Request body: %# v", string(reqBody))
 			http.Error(rw, message, http.StatusUnprocessableEntity)
 			return
 		}
@@ -71,9 +72,9 @@ func deploy(args *config.Args) http.HandlerFunc {
 			// e.handleError("Invalid configuration: %s", err, rw, deployerConfig)
 			return
 		}
+		logger.Infof("Running deploy request on: %# v", string(reqBody))
 
 		// connect to cluster
-		// e.logger.Infof("Running deploy request on: %# v", string(reqBody))
 		kubeConnection := connect.ConnectToCluster(deployerConfig.Deployer.ClusterConfig, false) // ADD LOGGER
 		// if connectionStatus.Error != nil {
 		// 	e.handleError("Cannot connect to given cluster: %s", connectionStatus.Error, rw, exporterConfig)

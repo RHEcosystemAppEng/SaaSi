@@ -16,7 +16,8 @@ type Args struct {
 }
 
 func ParseEnvs() *Args {
-	// init args config for environment variable
+
+	// init args config for environment variables
 	args := Args{}
 
 	// get output directory variable
