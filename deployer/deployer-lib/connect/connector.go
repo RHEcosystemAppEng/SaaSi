@@ -2,9 +2,9 @@ package connect
 
 import (
 	"io/ioutil"
-	"log"
 
 	"github.com/RHEcosystemAppEng/SaaSi/deployer/deployer-lib/config"
+	"github.com/sirupsen/logrus"
 	"k8s.io/apimachinery/pkg/version"
 	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/rest"
@@ -32,9 +32,10 @@ var (
 type KubeConnection struct {
 	KubeConfig     *rest.Config
 	KubeConfigPath string
+	Error          error
 }
 
-func ConnectToCluster(clusterConfig config.ClusterConfig, authByToken bool) *KubeConnection {
+func ConnectToCluster(clusterConfig config.ClusterConfig, authByToken bool, logger *logrus.Logger) *KubeConnection {
 	// init kube connection
 	conn := KubeConnection{}
 
@@ -52,26 +53,27 @@ func ConnectToCluster(clusterConfig config.ClusterConfig, authByToken bool) *Kub
 	conn.KubeConfig.Insecure = true
 
 	// generate kube config
-	conn.generateKubeConfiguration(authByToken)
+	if err = conn.generateKubeConfiguration(authByToken, logger); err == nil {
 
-	// discover supported resources in the api server
-	discoveryClient, err = discovery.NewDiscoveryClientForConfig(conn.KubeConfig)
-	if err != nil {
-		log.Fatalf("Cannot connect to given cluster: %s", err)
+		// discover supported resources in the api server
+		discoveryClient, err = discovery.NewDiscoveryClientForConfig(conn.KubeConfig)
+		if err == nil {
+
+			// retrieve and parse the servers version
+			versionInfo, err = discoveryClient.ServerVersion()
+			if err == nil {
+
+				logger.Infof("Connected to cluster %s at server %s with version %s", clusterConfig.ClusterId, clusterConfig.Server, versionInfo)
+				return &conn
+			}
+		}
 	}
 
-	// retrieve and parse the servers version
-	versionInfo, err = discoveryClient.ServerVersion()
-	if err != nil {
-		log.Fatalf("Cannot connect to given cluster: %s", err)
-	}
-
-	log.Printf("Connected to cluster %s at server %s with version %s", clusterConfig.ClusterId, clusterConfig.Server, versionInfo)
-
+	conn.Error = err
 	return &conn
 }
 
-func (conn *KubeConnection) generateKubeConfiguration(authByToken bool) {
+func (conn *KubeConnection) generateKubeConfiguration(authByToken bool, logger *logrus.Logger) error {
 
 	// define cluster configuration
 	clusters := make(map[string]*api.Cluster)
@@ -117,11 +119,13 @@ func (conn *KubeConnection) generateKubeConfiguration(authByToken bool) {
 
 	kubeconfig, err := ioutil.TempFile(TEMPORARY_FILE_DIR, KUBE_CONFIG_FILE_NAME)
 	if err != nil {
-		log.Fatalf("Cannot connect to given cluster: %s", err)
+		return err
 	}
 
 	clientcmd.WriteToFile(clientConfig, kubeconfig.Name())
-	log.Printf("Saved kubeconfig to %s", kubeconfig.Name())
+	logger.Infof("Saved kubeconfig to %s", kubeconfig.Name())
 
 	conn.KubeConfigPath = kubeconfig.Name()
+
+	return nil
 }

@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 
 	"github.com/RHEcosystemAppEng/SaaSi/deployer/deployer-lib/config"
@@ -69,33 +68,36 @@ func deploy(args *config.Args, logger *logrus.Logger) http.HandlerFunc {
 		// validate deployemnt data
 		err = deployerConfig.Deployer.Validate()
 		if err != nil {
-			// e.handleError("Invalid configuration: %s", err, rw, deployerConfig)
+			handleError("Invalid configuration: %s", err, rw, deployerConfig.Deployer.ApplicationConfig.Name, logger)
 			return
 		}
 		logger.Infof("Running deploy request on: %# v", string(reqBody))
 
 		// connect to cluster
-		kubeConnection := connect.ConnectToCluster(deployerConfig.Deployer.ClusterConfig, false) // ADD LOGGER
-		// if connectionStatus.Error != nil {
-		// 	e.handleError("Cannot connect to given cluster: %s", connectionStatus.Error, rw, exporterConfig)
-		// 	return
-		// }
+		kubeConnection := connect.ConnectToCluster(deployerConfig.Deployer.ClusterConfig, false, logger)
+		if kubeConnection.Error != nil {
+			handleError("Cannot connect to given cluster: %s", kubeConnection.Error, rw, deployerConfig.Deployer.ApplicationConfig.Name, logger)
+			return
+		}
 
 		// create deployer context to hold global variables
 		deployerContext := context.InitDeployerContext(args, kubeConnection)
 
 		// create application deployment package
 		applicationPkg := packager.NewApplicationPkg(deployerConfig.Deployer.ApplicationConfig, deployerContext)
+		// ADD HANDLE ERROR
 
 		// check if all mandatory variables have been set, else list unset vars and throw exception
 		if len(applicationPkg.UnsetMandatoryParams) > 0 {
-			log.Fatalf("ERROR: Please complete missing configuration for the following mandatory parameters (<FILEPATH>: <MANDATORY_PARAMETERS>.)\n%s", utils.StringifyMap(applicationPkg.UnsetMandatoryParams))
-			// 	e.handleError("ERROR: Please complete missing configuration for the following mandatory parameters (<FILEPATH>: <MANDATORY_PARAMETERS>.)\n%s", utils.StringifyMap(applicationPkg.UnsetMandatoryParams), rw, exporterConfig)
-			// 	return
+			UnsetMandatoryParamsMsg := fmt.Sprintf("Missing configuration for the following mandatory parameters (<FILEPATH>: <MANDATORY_PARAMETERS>.)\n%s", utils.StringifyMap(applicationPkg.UnsetMandatoryParams))
+			handleError(UnsetMandatoryParamsMsg, nil, rw, deployerConfig.Deployer.ApplicationConfig.Name, logger)
+			return
 		}
 
 		// deploy application deployment package
 		deployer.DeployApplication(applicationPkg)
+		// ADD HANDLE ERROR
+
 	}
 }
 

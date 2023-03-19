@@ -11,14 +11,28 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+type ResponseStatus int64
+
 const (
-	KUSTOMIZE = "kustomize"
-	OC        = "oc"
+	KUSTOMIZE                = "kustomize"
+	OC                       = "oc"
+	Ok        ResponseStatus = iota
+	Failed
 )
 
 var (
 	err error
 )
+
+func (s ResponseStatus) String() string {
+	switch s {
+	case Ok:
+		return "ok"
+	case Failed:
+		return "failed"
+	}
+	return "unknown"
+}
 
 func ValidateRequirements(prog string) {
 
