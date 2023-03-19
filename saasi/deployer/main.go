@@ -20,7 +20,8 @@ func main() {
 	// Unmarshal deployer config and get cluster and application configs
 
 	authByToken := true
-	componentConfig := config.InitDeployerConfig()
+	args := config.ParseFlags()
+	componentConfig := config.InitDeployerConfig(args.ConfigFile)
 	pretty.Printf("Deploying the following configuration: \n%# v", componentConfig)
 	clusterConfig := componentConfig.ClusterConfig
 	var clusterProvisioned = false
@@ -32,7 +33,7 @@ func main() {
 			reflect.ValueOf(clusterConfig.Token).IsZero() &&
 			reflect.ValueOf(clusterConfig.User).IsZero() {
 			//deployApp = false
-			infraContext := context.InitInfraContext(componentConfig.FlagArgs)
+			infraContext := context.InitInfraContext(args)
 			beautifiedConfig, err := json.MarshalIndent(clusterConfig.Params, "", "   ")
 			if err != nil {
 				return
@@ -40,7 +41,7 @@ func main() {
 
 			log.Printf("About to deploy a cluster, clusterId:  %s , with following configuration (Every field that is not populated will be defaulted from source cluster): \n", clusterConfig.ClusterId)
 			pretty.Printf("%s \n", string(beautifiedConfig))
-			newClusterDetails := provisioner.ProvisionCluster(infraContext, &clusterConfig.Params, clusterConfig.Aws, componentConfig.FlagArgs.RootSourceDir)
+			newClusterDetails := provisioner.ProvisionCluster(infraContext, &clusterConfig.Params, clusterConfig.Aws, args.RootSourceDir)
 
 			log.Printf("Successfully deployed a cluster, clusterId:  %s ", clusterConfig.ClusterId)
 			log.Printf("returned details of provisioned cluster with id : %s,  %+v\n", clusterConfig.ClusterId, newClusterDetails)
@@ -62,7 +63,7 @@ func main() {
 	// connect to cluster
 	kubeConnection := connect.ConnectToCluster(clusterConfig, authByToken)
 	// create deployer context to hold global variables
-	deployerContext := context.InitDeployerContext(componentConfig.FlagArgs, kubeConnection)
+	deployerContext := context.InitDeployerContext(args, kubeConnection)
 	if clusterProvisioned {
 		deployerContext.KubeConnection.KubeConfigPath = kubeConfigPath
 	}

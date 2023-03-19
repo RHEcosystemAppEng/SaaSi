@@ -20,7 +20,7 @@ type InfraContext struct {
 	OutputClustersFolder string
 }
 
-func InitInfraContext(flags config.FlagArgs) *InfraContext {
+func InitInfraContext(flags *config.Args) *InfraContext {
 	rootDir, err := os.Getwd()
 	if err != nil {
 		log.Fatalf("Cannot extract current working directory from environment, detailed error:  %s", err)

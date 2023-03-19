@@ -16,7 +16,7 @@ type DeployerContext struct {
 	RootSourceDir  string
 }
 
-func InitDeployerContext(flagArgs config.FlagArgs, kubeConnection *connect.KubeConnection) *DeployerContext {
+func InitDeployerContext(flagArgs *config.Args, kubeConnection *connect.KubeConnection) *DeployerContext {
 	dc := DeployerContext{
 		KubeConnection: kubeConnection,
 		RootOutputDir:  flagArgs.RootOutputDir,

@@ -6,15 +6,8 @@ import (
 	"log"
 	"reflect"
 
-	"github.com/jessevdk/go-flags"
 	"gopkg.in/yaml.v2"
 )
-
-type FlagArgs struct {
-	ConfigFile    string `short:"f" description:"Application configuration file for deployemnt" required:"true"`
-	RootOutputDir string `short:"o" long:"output-dir" default:"output" description:"Root output folder"`
-	RootSourceDir string `short:"s" long:"source-dir" description:"Root source folder" required:"true"`
-}
 
 // ----------------------
 // ----Deployer Config----
@@ -27,7 +20,6 @@ type DeployerConfig struct {
 type ComponentConfig struct {
 	ClusterConfig     ClusterConfig     `yaml:"cluster"`
 	ApplicationConfig ApplicationConfig `yaml:"application"`
-	FlagArgs          FlagArgs
 }
 
 // ----------------------
@@ -99,19 +91,10 @@ type ApplicationParams struct {
 	Value string `yaml:"value"`
 }
 
-func InitDeployerConfig() *ComponentConfig {
-
-	// init flags for input arguments
-	flagArgs := FlagArgs{}
-
-	// parse input arguments from os into flags
-	_, err := flags.Parse(&flagArgs)
-	if err != nil {
-		log.Fatal("Failed to parse os input arguments")
-	}
+func InitDeployerConfig(configFile string) *ComponentConfig {
 
 	// read deployer config file
-	yfile, err := ioutil.ReadFile(flagArgs.ConfigFile)
+	yfile, err := ioutil.ReadFile(configFile)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -122,9 +105,6 @@ func InitDeployerConfig() *ComponentConfig {
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	// set flag input arguments for components
-	config.Deployer.FlagArgs = flagArgs
 
 	return &config.Deployer
 }

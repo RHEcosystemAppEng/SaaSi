@@ -8,10 +8,10 @@ import (
 )
 
 func main() {
-	envConfig := config.ParseEnvs()
-	fmt.Print(envConfig) //PLACEHOLDER
+	args := config.ParseEnvs()
+	fmt.Print(args) //PLACEHOLDER
 
 	// ADD LOGGER
 
-	api.HandleRequests()
+	api.HandleRequests(args)
 }

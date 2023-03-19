@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/RHEcosystemAppEng/SaaSi/deployer/deployer-lib/config"
 	"github.com/gorilla/mux"
 )
 
@@ -20,9 +21,9 @@ var (
 	router = mux.NewRouter()
 )
 
-func HandleRequests() {
+func HandleRequests(args *config.Args) {
 
-	router.Path(APP_DEPLOYER_PATH).HandlerFunc(deploy).Methods(POST)
+	router.Path(APP_DEPLOYER_PATH).HandlerFunc(deploy(args)).Methods(POST)
 	router.Path(APP_DEPLOYER_PATH).HandlerFunc(info).Methods(GET)
 
 	// init hosting URL
