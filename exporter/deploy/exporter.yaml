@@ -1,0 +1,95 @@
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: saasi
+---
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: saasi-exporter
+  labels:
+    app: saasi-exporter
+spec:
+  selector:
+    matchLabels:
+      app: saasi-exporter
+  replicas: 1
+  serviceAccountName: saasi
+  template:
+    metadata:
+      labels:
+        app: saasi-exporter
+    spec:
+      containers:
+      - name: saasi-infra-exporter
+        env:
+        - name: OUTPUT_DIR
+          value: /tmp/output
+        - name: PORT
+          value: "8080"
+        ports:
+        - containerPort: 8080
+          protocol: TCP
+        image: 'quay.io/ecosystem-appeng/saasi-infra-exporter:0.1'
+        imagePullPolicy: Always
+        resources:
+          limits:
+            cpu: '300m'
+            memory: '500Mi'
+      - name: saasi-app-exporter
+        env:
+        - name: OUTPUT_DIR
+          value: /tmp/output
+        - name: PORT
+          value: "8181"
+        ports:
+        - containerPort: 8181
+          protocol: TCP
+        image: 'quay.io/ecosystem-appeng/saasi-app-exporter:0.1'
+        imagePullPolicy: Always
+        resources:
+          limits:
+            cpu: '300m'
+            memory: '500Mi'
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: saasi-exporter
+spec:
+  ports:
+  - name: infra
+    port: 8080
+    protocol: TCP
+    targetPort: 8080
+  - name: app
+    port: 8181
+    protocol: TCP
+    targetPort: 8181
+  selector:
+    app: saasi-exporter
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: saasi-infra-exporter
+spec:
+  path: /export/infra
+  port:
+    targetPort: 8080
+  to:
+    kind: Service
+    name: saasi-exporter
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: saasi-app-exporter
+spec:
+  path: /export/application
+  port:
+    targetPort: 8181
+  to:
+    kind: Service
+    name: saasi-exporter
