@@ -17,6 +17,10 @@ const (
 	PORT              = 8080
 	POST              = "POST"
 	GET               = "GET"
+	CONTENT_TYPE      = "application/json"
+	APPLICATION_NAME  = "app-deployer"
+	BUILD_VERSION     = "dev"
+	STATUS            = "up"
 )
 
 var (
@@ -29,6 +33,12 @@ type ApplicationOutput struct {
 	Status          string `json:"status"`
 	ErrorMessage    string `json:"errorMessage"`
 	Location        string `json:"location"`
+}
+
+type applicationInfo struct {
+	Name    string `yaml:"name"`
+	Version string `yaml:"version"`
+	Status  string `yaml:"status"`
 }
 
 func HandleRequests(args *config.Args, logger *logrus.Logger) {
@@ -45,12 +55,56 @@ func HandleRequests(args *config.Args, logger *logrus.Logger) {
 	}
 }
 
-func handleError(message string, err error, rw http.ResponseWriter, applicationName string, logger *logrus.Logger) {
-	message = fmt.Sprintf(message, err.Error())
+func handleError(rw http.ResponseWriter, logger *logrus.Logger, message string, applicationName string) {
+
 	logger.Errorf(message)
-	rw.WriteHeader(http.StatusBadRequest)
-	rw.Header().Set("Content-Type", "application/json")
-	output := ApplicationOutput{ApplicationName: applicationName, Status: utils.Failed.String(), ErrorMessage: message}
+
+	// set output parameters and marshal to json format
+	output := ApplicationOutput{
+		ApplicationName: applicationName,
+		Status:          utils.Failed.String(),
+		ErrorMessage:    message,
+		Location:        "",
+	}
 	jsonOutput, _ := json.Marshal(output)
+
+	// set http parameters and produce response
+	rw.WriteHeader(http.StatusBadRequest)
+	rw.Header().Set("Content-Type", CONTENT_TYPE)
+	rw.Write([]byte(jsonOutput))
+}
+
+func handleOk(rw http.ResponseWriter, logger *logrus.Logger, applicationName string, outputDir string) {
+
+	logger.Infof("Application %s deployer successfully")
+
+	// set output parameters and marshal to json format
+	output := ApplicationOutput{
+		ApplicationName: applicationName,
+		Status:          STATUS,
+		ErrorMessage:    "",
+		Location:        outputDir,
+	}
+	jsonOutput, _ := json.Marshal(output)
+
+	// set http parameters and produce response
+	rw.WriteHeader(http.StatusOK)
+	rw.Header().Set("Content-Type", CONTENT_TYPE)
+	rw.Write([]byte(jsonOutput))
+}
+
+func handleInfo(rw http.ResponseWriter) {
+
+	// set output parameters and marshal to json format
+	output := applicationInfo{
+		Name:    APPLICATION_NAME,
+		Version: BUILD_VERSION,
+		Status:  STATUS,
+	}
+	jsonOutput, _ := json.Marshal(output)
+
+	// set http parameters and produce response
+	rw.WriteHeader(http.StatusOK)
+	rw.Header().Set("Content-Type", CONTENT_TYPE)
 	rw.Write([]byte(jsonOutput))
 }
