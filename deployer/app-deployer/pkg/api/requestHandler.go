@@ -14,7 +14,6 @@ import (
 const (
 	APP_DEPLOYER_PATH = "/deploy/application"
 	HOST              = "0.0.0.0"
-	PORT              = 8080
 	POST              = "POST"
 	GET               = "GET"
 	CONTENT_TYPE      = "application/json"
@@ -48,7 +47,7 @@ func HandleRequests(args *config.Args, logger *logrus.Logger) {
 	router.Path(APP_DEPLOYER_PATH).HandlerFunc(info).Methods(GET)
 
 	// init hosting URL
-	url := fmt.Sprintf("%s:%d", HOST, PORT)
+	url := fmt.Sprintf("%s:%d", HOST, args.Port)
 	logger.Infof("Starting listener as %s", url)
 	if err = http.ListenAndServe(url, router); err != nil {
 		logger.Fatal(err)

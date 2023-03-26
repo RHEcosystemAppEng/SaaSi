@@ -3,15 +3,21 @@ package config
 import (
 	"log"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/jessevdk/go-flags"
 )
 
+const PORT = "8080"
+
+var err error
+
 type Args struct {
 	ConfigFile    string `short:"f" description:"Application configuration file for deployemnt" required:"true"`
 	RootOutputDir string `short:"o" long:"output-dir" default:"output" description:"Root output folder"`
 	RootSourceDir string `short:"s" long:"source-dir" description:"Root source folder" required:"true"`
+	Port          int
 	Debug         bool
 }
 
@@ -33,6 +39,16 @@ func ParseEnvs() *Args {
 		log.Fatal("missing mandatory environment variable SOURCE_DIR")
 	}
 	args.RootSourceDir = rootSourceDir
+
+	// get port variable
+	port, ok := os.LookupEnv("PORT")
+	if !ok {
+		port = PORT
+	}
+	args.Port, err = strconv.Atoi(port)
+	if err != nil {
+		log.Fatalf("Invalid port %s configured", port)
+	}
 
 	// get debug variable
 	debug, ok := os.LookupEnv("DEBUG")
