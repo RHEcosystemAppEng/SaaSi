@@ -80,24 +80,29 @@ func deploy(args *config.Args, logger *logrus.Logger) http.HandlerFunc {
 			return
 		}
 
-		// create deployer context to hold global variables
-		deployerContext := context.InitDeployerContext(args, kubeConnection)
+		// create deployer context to hold global deployment parameters
+		deployerContext := context.InitDeployerContext(args, kubeConnection, logger)
 
 		// create application deployment package
 		applicationPkg := packager.NewApplicationPkg(deployerConfig.Deployer.ApplicationConfig, deployerContext)
-		// ADD HANDLE ERROR
+		if applicationPkg.Error != nil {
+			handleError("Failed to create application deployment package: %s", applicationPkg.Error, rw, deployerConfig.Deployer.ApplicationConfig.Name, logger)
+			return
+		}
 
 		// check if all mandatory variables have been set, else list unset vars and throw exception
 		if len(applicationPkg.UnsetMandatoryParams) > 0 {
-			UnsetMandatoryParamsMsg := fmt.Sprintf("Missing configuration for the following mandatory parameters (<FILEPATH>: <MANDATORY_PARAMETERS>.)\n%s", utils.StringifyMap(applicationPkg.UnsetMandatoryParams))
-			handleError(UnsetMandatoryParamsMsg, nil, rw, deployerConfig.Deployer.ApplicationConfig.Name, logger)
+			UnsetMandatoryParamsErrorMsg := fmt.Errorf("Missing configuration for the following mandatory parameters (<FILEPATH>: <MANDATORY_PARAMETERS>.)\n%s", utils.StringifyMap(applicationPkg.UnsetMandatoryParams))
+			handleError("%s", UnsetMandatoryParamsErrorMsg, rw, deployerConfig.Deployer.ApplicationConfig.Name, logger)
 			return
 		}
 
 		// deploy application deployment package
-		deployer.DeployApplication(applicationPkg)
-		// ADD HANDLE ERROR
-
+		err = deployer.DeployApplication(applicationPkg)
+		if err != nil {
+			handleError("Failed to deploy application deployment package: %s", err, rw, deployerConfig.Deployer.ApplicationConfig.Name, logger)
+			return
+		}
 	}
 }
 

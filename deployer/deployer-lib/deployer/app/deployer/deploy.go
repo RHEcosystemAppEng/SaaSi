@@ -1,7 +1,6 @@
 package deployer
 
 import (
-	"log"
 	"os/exec"
 
 	"github.com/RHEcosystemAppEng/SaaSi/deployer/deployer-lib/deployer/app/packager"
@@ -12,24 +11,31 @@ var (
 	err error
 )
 
-func DeployApplication(pkg *packager.ApplicationPkg) {
+func DeployApplication(pkg *packager.ApplicationPkg) error {
 
 	// validate oc cli
-	utils.ValidateRequirements(utils.OC)
+	if err = utils.ValidateRequirements(utils.OC); err != nil {
+		pkg.DeployerContext.GetLogger().Errorf("%s command not found", utils.OC)
+		return err
+	}
 
 	// deploy application target namespaces using oc cli
 	cmd := exec.Command("oc", "apply", "-f", ".", "--kubeconfig", pkg.DeployerContext.GetKubeConfigPath())
 	cmd.Dir = pkg.TargetNamespaceDir
 	if err = cmd.Run(); err != nil {
-		log.Fatalf("Failed to deploy files from target namespace directory: %s, Error: %s", pkg.TargetNamespaceDir, err)
+		pkg.DeployerContext.GetLogger().Errorf("Failed to deploy files from target namespace directory: %s", pkg.TargetNamespaceDir)
+		return err
 	}
-	log.Printf("Successfully deployed all files from target namespace directory: %s", pkg.TargetNamespaceDir)
+	pkg.DeployerContext.GetLogger().Infof("Successfully deployed all files from target namespace directory: %s", pkg.TargetNamespaceDir)
 
 	// deploy application package using oc cli
 	cmd = exec.Command("oc", "apply", "-f", ".", "--kubeconfig", pkg.DeployerContext.GetKubeConfigPath())
 	cmd.Dir = pkg.DeloymentDir
 	if err = cmd.Run(); err != nil {
-		log.Fatalf("Failed to deploy files from deployment directory: %s, Error: %s", pkg.DeloymentDir, err)
+		pkg.DeployerContext.GetLogger().Errorf("Failed to deploy files from deployment directory: %s", pkg.DeloymentDir)
+		return err
 	}
-	log.Printf("Successfully deployed all files from deployment directory: %s", pkg.DeloymentDir)
+	pkg.DeployerContext.GetLogger().Infof("Successfully deployed all files from deployment directory: %s", pkg.DeloymentDir)
+
+	return nil
 }

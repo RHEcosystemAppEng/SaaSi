@@ -34,12 +34,14 @@ func (s ResponseStatus) String() string {
 	return "unknown"
 }
 
-func ValidateRequirements(prog string) {
+func ValidateRequirements(prog string) error {
 
 	// verify program exists
 	if _, err = exec.LookPath(prog); err != nil {
-		log.Fatalf("%s command not found, Error: %s", prog, err)
+		return err
 	}
+
+	return nil
 }
 
 func CreateDir(filepath string) {

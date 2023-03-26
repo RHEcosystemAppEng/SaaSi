@@ -2,7 +2,6 @@ package packager
 
 import (
 	"io/ioutil"
-	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -20,25 +19,31 @@ func (pkg *ApplicationPkg) inspectMandatoryParams(ns config.Namespaces) {
 		// if file is not a directory and is of type "env", check file for mandatory params
 		if !info.IsDir() && filepath.Ext(file) == PARAM_FILE_EXT {
 			// if mandatory params still exist in file, save data
-			if mandatoryParamsList := getUnsetMandatoryParams(file); len(mandatoryParamsList) > 0 {
+			mandatoryParamsList, err := pkg.getUnsetMandatoryParams(file)
+			if err != nil {
+				return err
+			}
+			if len(mandatoryParamsList) > 0 {
 				pkg.UnsetMandatoryParams[file] = mandatoryParamsList
 			}
 		}
 		return nil
 	})
 	if err != nil {
-		log.Fatalf("Failed to reach %s parameter files to inspect for unset mandatory parameters, Error: %s", ns.Name, err)
+		pkg.DeployerContext.GetLogger().Errorf("Failed to reach %s namespace parameter files to inspect for unset mandatory parameters", ns.Name)
+		pkg.Error = err
 	}
 }
 
-func getUnsetMandatoryParams(file string) []string {
+func (pkg *ApplicationPkg) getUnsetMandatoryParams(file string) ([]string, error) {
 
 	var mandatoryParams []string
 
 	// read param file
 	output, err := ioutil.ReadFile(file)
 	if err != nil {
-		log.Fatalf("Failed to get unset mandatory parameters, could not read parameter file %s, Error: %s", file, err)
+		pkg.DeployerContext.GetLogger().Errorf("Failed to get unset mandatory parameters, could not read parameter file %s", file)
+		return mandatoryParams, err
 	}
 
 	// parse param file output to string
@@ -52,5 +57,5 @@ func getUnsetMandatoryParams(file string) []string {
 			mandatoryParams = append(mandatoryParams, line[:strings.Index(line, "=")])
 		}
 	}
-	return mandatoryParams
+	return mandatoryParams, nil
 }

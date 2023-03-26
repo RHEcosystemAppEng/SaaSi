@@ -24,7 +24,7 @@ var (
 	router = mux.NewRouter()
 )
 
-type AppDeployerOutput struct {
+type ApplicationOutput struct {
 	ApplicationName string `json:"applicationName"`
 	Status          string `json:"status"`
 	ErrorMessage    string `json:"errorMessage"`
@@ -50,7 +50,7 @@ func handleError(message string, err error, rw http.ResponseWriter, applicationN
 	logger.Errorf(message)
 	rw.WriteHeader(http.StatusBadRequest)
 	rw.Header().Set("Content-Type", "application/json")
-	output := AppDeployerOutput{ApplicationName: applicationName, Status: utils.Failed.String(), ErrorMessage: message}
+	output := ApplicationOutput{ApplicationName: applicationName, Status: utils.Failed.String(), ErrorMessage: message}
 	jsonOutput, _ := json.Marshal(output)
 	rw.Write([]byte(jsonOutput))
 }

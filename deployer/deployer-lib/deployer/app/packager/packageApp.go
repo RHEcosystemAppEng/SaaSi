@@ -3,7 +3,6 @@ package packager
 import (
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -47,6 +46,7 @@ type ApplicationPkg struct {
 	DeloymentDir         string
 	TargetNamespaceDir   string
 	UnsetMandatoryParams map[string][]string
+	Error                error
 }
 
 func NewApplicationPkg(appConfig config.ApplicationConfig, deployerContext *context.DeployerContext) *ApplicationPkg {
@@ -96,12 +96,21 @@ func (pkg *ApplicationPkg) generateApplicationPkg() {
 
 		// generate artifact for current namespace
 		pkg.generateNsArtifact(ns)
+		if pkg.Error != nil {
+			return
+		}
 
 		// invoke customizations onto artifact
 		pkg.invokeNsCustomizations(ns)
+		if pkg.Error != nil {
+			return
+		}
 
 		// pkg artifact
 		pkg.buildNsDeployment(ns)
+		if pkg.Error != nil {
+			return
+		}
 
 		// create target namespace resource
 		pkg.buildTargetNsResource(ns)
@@ -112,10 +121,10 @@ func (pkg *ApplicationPkg) generateNsArtifact(ns config.Namespaces) {
 
 	source := filepath.Join(pkg.DeployerContext.GetRootSourceDir(), APPLICATION_DIR, pkg.AppConfig.Name, KUSTOMIZE_DIR, ns.Name)
 	// create pkg template at pkg template path
-	log.Printf("cp -r %s %s", source, pkg.KustomizeDir)
 	cmd := exec.Command("cp", "-r", source, pkg.KustomizeDir)
 	if err := cmd.Run(); err != nil {
-		log.Fatalf("Failed to generate kustomize template for namespace: %s, Error: %s", ns.Name, err)
+		pkg.DeployerContext.GetLogger().Errorf("Failed to generate kustomize template for namespace: %s", ns.Name)
+		pkg.Error = err
 	}
 }
 
@@ -127,7 +136,9 @@ func (pkg *ApplicationPkg) buildNsDeployment(ns config.Namespaces) {
 	// create pkg deployment file
 	nsDeploymentFile, err := os.Create(nsDeploymentFilepath)
 	if err != nil {
-		log.Fatalf("Failed to create deployment file for namespace: %s, Error: %s", ns.Name, err)
+		pkg.DeployerContext.GetLogger().Errorf("Failed to create deployment file for namespace: %s", ns.Name)
+		pkg.Error = err
+		return
 	}
 	defer nsDeploymentFile.Close()
 
@@ -135,7 +146,8 @@ func (pkg *ApplicationPkg) buildNsDeployment(ns config.Namespaces) {
 	cmd := exec.Command("kustomize", "build", nsTmplDir)
 	cmd.Stdout = nsDeploymentFile
 	if err = cmd.Run(); err != nil {
-		log.Fatalf("Failed to build deployment file with kustomize for namespace: %s, Error: %s", ns.Name, err)
+		pkg.DeployerContext.GetLogger().Errorf("Failed to build deployment file with kustomize for namespace: %s", ns.Name)
+		pkg.Error = err
 	}
 }
 
@@ -147,7 +159,9 @@ func (pkg *ApplicationPkg) buildTargetNsResource(ns config.Namespaces) {
 	// create pkg deployment file
 	targetNsResourceFile, err := os.Create(targetNsResourceFilepath)
 	if err != nil {
-		log.Fatalf("Failed to create target namespace file for target namespace: %s, Error: %s", ns.Target, err)
+		pkg.DeployerContext.GetLogger().Errorf("Failed to create target namespace file %s for namespace: %s", targetNsResourceFilepath, ns.Name)
+		pkg.Error = err
+		return
 	}
 	defer targetNsResourceFile.Close()
 
@@ -155,13 +169,16 @@ func (pkg *ApplicationPkg) buildTargetNsResource(ns config.Namespaces) {
 	targetNsResource := map[string]any{"apiVersion": "v1", "kind": "Namespace", "metadata": map[string]string{"name": ns.Target}}
 	targetNsResourceData, err := yaml.Marshal(targetNsResource)
 	if err != nil {
-		log.Fatalf("Failed to marshal target namespace %s data to yaml, Error: %s", ns.Target, err)
+		pkg.DeployerContext.GetLogger().Errorf("Failed to marshal target namespace \"%s\" data to yaml for namespace: %s", ns.Target, ns.Name)
+		pkg.Error = err
+		return
 	}
 
 	// write target namespace data to yaml file
 	err = ioutil.WriteFile(targetNsResourceFilepath, targetNsResourceData, 0)
 	if err != nil {
-		log.Fatalf("Failed to write target namespace data to file: %s, Error: %s", targetNsResourceFilepath, err)
+		pkg.DeployerContext.GetLogger().Errorf("Failed to write target namespace \"%s\" data to file %s for namespace: %s", ns.Target, targetNsResourceFilepath, ns.Name)
+		pkg.Error = err
 	}
 }
 
@@ -179,7 +196,7 @@ func (pkg *ApplicationPkg) establishTargetNsName(ns *config.Namespaces) {
 			ns.Target = fmt.Sprintf(pkg.AppConfig.NamespaceMappingFormat, ns.Name)
 			return
 		} else {
-			log.Printf("WARNING: NamespaceMappingFormat does not match required format, using original namespace name")
+			pkg.DeployerContext.GetLogger().Warningf("NamespaceMappingFormat does not match required format, using original namespace name: %s", ns.Name)
 		}
 	}
 

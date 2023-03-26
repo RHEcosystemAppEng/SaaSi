@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"log"
 	"reflect"
+	"strings"
 
 	"gopkg.in/yaml.v2"
 )
@@ -110,25 +111,38 @@ func InitDeployerConfig(configFile string) *ComponentConfig {
 }
 
 func (e *ComponentConfig) Validate() error {
+
+	// init list of missing parameters
+	var missingParams []string
+
+	// validate cluster parameters
 	if reflect.ValueOf(e.ClusterConfig).IsZero() {
-		return errors.New("missing cluster configuration")
+		missingParams = append(missingParams, "missing cluster configuration")
 	} else {
 		if e.ClusterConfig.ClusterId == "" {
-			return errors.New("missing clusterId configuration")
+			missingParams = append(missingParams, "missing clusterId configuration")
 		}
 		if e.ClusterConfig.Server == "" {
-			return errors.New("missing server configuration")
+			missingParams = append(missingParams, "missing server configuration")
 		}
 		if e.ClusterConfig.Token == "" {
-			return errors.New("missing token configuration")
+			missingParams = append(missingParams, "missing token configuration")
 		}
 	}
+
+	// validate application parameters
 	if reflect.ValueOf(e.ApplicationConfig).IsZero() {
-		return errors.New("missing application configuration")
+		missingParams = append(missingParams, "missing application configuration")
 	} else {
 		if e.ApplicationConfig.Name == "" {
-			return errors.New("missing application name configuration")
+			missingParams = append(missingParams, "missing application name configuration")
 		}
 	}
+
+	// if missing parameters exist, join listings and send as error
+	if len(missingParams) > 0 {
+		return errors.New(strings.Join(missingParams, ", "))
+	}
+
 	return nil
 }
