@@ -6,11 +6,7 @@ import (
 	"net/http"
 
 	"github.com/RHEcosystemAppEng/SaaSi/deployer/deployer-lib/config"
-	"github.com/RHEcosystemAppEng/SaaSi/deployer/deployer-lib/connect"
-	"github.com/RHEcosystemAppEng/SaaSi/deployer/deployer-lib/context"
-	"github.com/RHEcosystemAppEng/SaaSi/deployer/deployer-lib/deployer/app/deployer"
-	"github.com/RHEcosystemAppEng/SaaSi/deployer/deployer-lib/deployer/app/packager"
-	"github.com/RHEcosystemAppEng/SaaSi/deployer/deployer-lib/utils"
+	"github.com/RHEcosystemAppEng/SaaSi/deployer/deployer-lib/deployer/app"
 	"github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v2"
 )
@@ -50,47 +46,11 @@ func deploy(args *config.Args, logger *logrus.Logger) http.HandlerFunc {
 			http.Error(rw, message, http.StatusUnprocessableEntity)
 			return
 		}
+		logger.Infof("Running export request: %# v", string(reqBody))
 
-		// validate deployemnt data
-		err = deployerConfig.Deployer.Validate()
-		if err != nil {
-			handleError(rw, logger, fmt.Sprintf("Invalid configuration: %s", err.Error()), deployerConfig.Deployer.ApplicationConfig.Name)
-			return
-		}
-		logger.Infof("Running deploy request on: %# v", string(reqBody))
+		output := app.Deploy(deployerConfig.Deployer, args, logger)
 
-		// connect to cluster
-		kubeConnection := connect.ConnectToCluster(deployerConfig.Deployer.ClusterConfig, false, logger)
-		if kubeConnection.Error != nil {
-			handleError(rw, logger, fmt.Sprintf("Cannot connect to given cluster: %s", kubeConnection.Error.Error()), deployerConfig.Deployer.ApplicationConfig.Name)
-			return
-		}
-
-		// create deployer context to hold global deployment parameters
-		deployerContext := context.InitDeployerContext(args, kubeConnection, logger)
-
-		// create application deployment package
-		applicationPkg := packager.NewApplicationPkg(deployerConfig.Deployer.ApplicationConfig, deployerContext)
-		if applicationPkg.Error != nil {
-			handleError(rw, logger, fmt.Sprintf("Failed to create application deployment package: %s", applicationPkg.Error.Error()), deployerConfig.Deployer.ApplicationConfig.Name)
-			return
-		}
-
-		// check if all mandatory variables have been set, else list unset vars and throw exception
-		if len(applicationPkg.UnsetMandatoryParams) > 0 {
-			UnsetMandatoryParamsMsg := fmt.Sprintf("Missing configuration for the following mandatory parameters (<FILEPATH>: <MANDATORY_PARAMETERS>.)\n%s", utils.StringifyMap(applicationPkg.UnsetMandatoryParams))
-			handleError(rw, logger, UnsetMandatoryParamsMsg, deployerConfig.Deployer.ApplicationConfig.Name)
-			return
-		}
-
-		// deploy application deployment package
-		err = deployer.DeployApplication(applicationPkg)
-		if err != nil {
-			handleError(rw, logger, fmt.Sprintf("Failed to deploy application deployment package: %s", err.Error()), deployerConfig.Deployer.ApplicationConfig.Name)
-			return
-		}
-
-		handleOk(rw, logger, deployerConfig.Deployer.ApplicationConfig.Name, args.RootOutputDir)
+		handleResponse(rw, logger, output)
 	}
 }
 

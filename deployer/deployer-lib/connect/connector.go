@@ -35,7 +35,7 @@ type KubeConnection struct {
 	Error          error
 }
 
-func ConnectToCluster(clusterConfig config.ClusterConfig, authByToken bool, logger *logrus.Logger) *KubeConnection {
+func ConnectToCluster(clusterConfig config.ClusterConfig, logger *logrus.Logger) *KubeConnection {
 	// init kube connection
 	conn := KubeConnection{}
 
@@ -44,16 +44,16 @@ func ConnectToCluster(clusterConfig config.ClusterConfig, authByToken bool, logg
 
 	// set credentials in kube config
 	conn.KubeConfig.Host = clusterConfig.Server
-	if authByToken {
-		conn.KubeConfig.BearerToken = clusterConfig.Token
-	} else {
+	if clusterConfig.Provision.AuthByCreds {
 		conn.KubeConfig.Password = clusterConfig.Token
 		conn.KubeConfig.Username = clusterConfig.User
+	} else {
+		conn.KubeConfig.BearerToken = clusterConfig.Token
 	}
 	conn.KubeConfig.Insecure = true
 
 	// generate kube config
-	if err = conn.generateKubeConfiguration(authByToken, logger); err == nil {
+	if err = conn.generateKubeConfiguration(clusterConfig.Provision.AuthByCreds, logger); err == nil {
 
 		// discover supported resources in the api server
 		discoveryClient, err = discovery.NewDiscoveryClientForConfig(conn.KubeConfig)
@@ -73,7 +73,7 @@ func ConnectToCluster(clusterConfig config.ClusterConfig, authByToken bool, logg
 	return &conn
 }
 
-func (conn *KubeConnection) generateKubeConfiguration(authByToken bool, logger *logrus.Logger) error {
+func (conn *KubeConnection) generateKubeConfiguration(authByCreds bool, logger *logrus.Logger) error {
 
 	// define cluster configuration
 	clusters := make(map[string]*api.Cluster)
@@ -93,17 +93,18 @@ func (conn *KubeConnection) generateKubeConfiguration(authByToken bool, logger *
 
 	// define auth info configuration
 	var authinfos map[string]*api.AuthInfo
-	if authByToken {
-		authinfos = make(map[string]*api.AuthInfo)
-		authinfos[DEFAULT_AUTH_INFO] = &api.AuthInfo{
-			Token: conn.KubeConfig.BearerToken,
-		}
-		//otherwise, auth by basic authentication
-	} else {
+	if authByCreds {
+		// auth by basic authentication
 		authinfos = make(map[string]*api.AuthInfo)
 		authinfos[DEFAULT_AUTH_INFO] = &api.AuthInfo{
 			Username: conn.KubeConfig.Username,
 			Password: conn.KubeConfig.Password,
+		}
+	} else {
+		//otherwise, auth by token
+		authinfos = make(map[string]*api.AuthInfo)
+		authinfos[DEFAULT_AUTH_INFO] = &api.AuthInfo{
+			Token: conn.KubeConfig.BearerToken,
 		}
 	}
 

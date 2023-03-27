@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/RHEcosystemAppEng/SaaSi/deployer/deployer-lib/config"
+	"github.com/RHEcosystemAppEng/SaaSi/deployer/deployer-lib/deployer/app"
 	"github.com/RHEcosystemAppEng/SaaSi/deployer/deployer-lib/utils"
 	"github.com/gorilla/mux"
 	"github.com/sirupsen/logrus"
@@ -27,17 +28,10 @@ var (
 	router = mux.NewRouter()
 )
 
-type ApplicationOutput struct {
-	ApplicationName string `json:"applicationName"`
-	Status          string `json:"status"`
-	ErrorMessage    string `json:"errorMessage"`
-	Location        string `json:"location"`
-}
-
 type applicationInfo struct {
-	Name    string `yaml:"name"`
-	Version string `yaml:"version"`
-	Status  string `yaml:"status"`
+	Name    string `json:"name"`
+	Version string `json:"version"`
+	Status  string `json:"status"`
 }
 
 func HandleRequests(args *config.Args, logger *logrus.Logger) {
@@ -54,40 +48,24 @@ func HandleRequests(args *config.Args, logger *logrus.Logger) {
 	}
 }
 
-func handleError(rw http.ResponseWriter, logger *logrus.Logger, message string, applicationName string) {
+func handleResponse(rw http.ResponseWriter, logger *logrus.Logger, output *app.ApplicationOutput) {
 
-	logger.Errorf(message)
+	if output.Status == utils.Failed.String() {
 
-	// set output parameters and marshal to json format
-	output := ApplicationOutput{
-		ApplicationName: applicationName,
-		Status:          utils.Failed.String(),
-		ErrorMessage:    message,
-		Location:        "",
+		// set http parameters for error
+		logger.Error(output.ErrorMessage)
+		rw.WriteHeader(http.StatusBadRequest)
+	} else {
+
+		// set http parameters for ok
+		logger.Info("Process completed successfully")
+		rw.WriteHeader(http.StatusOK)
 	}
+
+	// marshal output to json format
 	jsonOutput, _ := json.Marshal(output)
 
 	// set http parameters and produce response
-	rw.WriteHeader(http.StatusBadRequest)
-	rw.Header().Set("Content-Type", CONTENT_TYPE)
-	rw.Write([]byte(jsonOutput))
-}
-
-func handleOk(rw http.ResponseWriter, logger *logrus.Logger, applicationName string, outputDir string) {
-
-	logger.Infof("Application %s deployer successfully")
-
-	// set output parameters and marshal to json format
-	output := ApplicationOutput{
-		ApplicationName: applicationName,
-		Status:          STATUS,
-		ErrorMessage:    "",
-		Location:        outputDir,
-	}
-	jsonOutput, _ := json.Marshal(output)
-
-	// set http parameters and produce response
-	rw.WriteHeader(http.StatusOK)
 	rw.Header().Set("Content-Type", CONTENT_TYPE)
 	rw.Write([]byte(jsonOutput))
 }

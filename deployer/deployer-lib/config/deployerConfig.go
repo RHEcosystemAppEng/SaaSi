@@ -35,6 +35,7 @@ type ClusterConfig struct {
 	ClusterId     string        `yaml:"clusterId"`
 	Aws           AwsSettings   `yaml:"aws"`
 	Params        ClusterParams `yaml:"params"`
+	Provision     ClusterProvision
 }
 
 type AwsSettings struct {
@@ -58,6 +59,12 @@ type ClusterParams struct {
 	ProvCloudProvider     string `yaml:"PROV_CLOUD_PROVIDER",omitempty`
 	ProvCloudRegion       string `yaml:"PROV_CLOUD_REGION",omitempty`
 	MasterCount           string `yaml:"MASTER_COUNT",omitempty`
+}
+
+type ClusterProvision struct {
+	AuthByCreds    bool
+	Provisioned    bool
+	KubeConfigPath string
 }
 
 // ----------------------

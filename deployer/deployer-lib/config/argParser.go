@@ -14,7 +14,7 @@ const PORT = "8080"
 var err error
 
 type Args struct {
-	ConfigFile    string `short:"f" description:"Application configuration file for deployemnt" required:"true"`
+	ConfigFile    string `short:"f" description:"Application configuration file for deployment" required:"true"`
 	RootOutputDir string `short:"o" long:"output-dir" default:"output" description:"Root output folder"`
 	RootSourceDir string `short:"s" long:"source-dir" description:"Root source folder" required:"true"`
 	Port          int
