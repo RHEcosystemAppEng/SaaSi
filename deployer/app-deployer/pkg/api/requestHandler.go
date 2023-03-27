@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"os"
 
 	"github.com/RHEcosystemAppEng/SaaSi/deployer/deployer-lib/config"
 	"github.com/RHEcosystemAppEng/SaaSi/deployer/deployer-lib/deployer/app"
@@ -19,13 +20,13 @@ const (
 	GET               = "GET"
 	CONTENT_TYPE      = "application/json"
 	APPLICATION_NAME  = "app-deployer"
-	BUILD_VERSION     = "dev"
 	STATUS            = "up"
 )
 
 var (
-	err    error
-	router = mux.NewRouter()
+	err          error
+	BuildVersion = "development"
+	router       = mux.NewRouter()
 )
 
 type applicationInfo struct {
@@ -35,6 +36,8 @@ type applicationInfo struct {
 }
 
 func HandleRequests(args *config.Args, logger *logrus.Logger) {
+
+	logger.Infof("Running %s with version %s", os.Args[0], BuildVersion)
 
 	// define routes
 	router.Path(APP_DEPLOYER_PATH).HandlerFunc(deploy(args, logger)).Methods(POST)
@@ -75,7 +78,7 @@ func handleInfo(rw http.ResponseWriter) {
 	// set output parameters and marshal to json format
 	output := applicationInfo{
 		Name:    APPLICATION_NAME,
-		Version: BUILD_VERSION,
+		Version: BuildVersion,
 		Status:  STATUS,
 	}
 	jsonOutput, _ := json.Marshal(output)

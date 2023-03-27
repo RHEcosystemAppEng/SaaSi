@@ -1,14 +1,10 @@
 package main
 
 import (
-	"os"
-
 	"github.com/RHEcosystemAppEng/SaaSi/deployer/app-deployer/pkg/api"
 	"github.com/RHEcosystemAppEng/SaaSi/deployer/deployer-lib/config"
 	"github.com/RHEcosystemAppEng/SaaSi/deployer/deployer-lib/utils"
 )
-
-var BuildVersion = "dev"
 
 func main() {
 
@@ -20,7 +16,6 @@ func main() {
 
 	// print runtime configuration
 	utils.PrettyPrint(logger, "Runtime configuration: %s", args)
-	logger.Infof("Running %s with version %s", os.Args[0], BuildVersion)
 
 	// handle HTTP requests
 	api.HandleRequests(args, logger)
