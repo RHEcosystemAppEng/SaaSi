@@ -8,18 +8,20 @@ COPY go.mod ./
 COPY go.sum ./
 RUN go mod download
 
+COPY pkg/ ./pkg
 COPY *.go ./
 
 RUN ls -lh /tmp/
-RUN CGO_ENABLED=0 GOOS=linux go build -mod=readonly  -v -o deployer -ldflags "-X requestHandler.BuildVersion=$BUILD_VERSION"
+RUN CGO_ENABLED=0 GOOS=linux go build -v -o deployer -ldflags "-X requestHandler.BuildVersion=$BUILD_VERSION"
 
 FROM quay.io/openshift/origin-cli:latest as origin-cli
+FROM quay.io/ishishov/kustomize:0.0.1 as kustomize
 
 FROM frolvlad/alpine-glibc:latest as runner
 RUN apk add --no-cache ca-certificates
 COPY --from=builder /app/deployer /go/bin/deployer
 COPY --from=origin-cli /usr/bin/oc /usr/bin/oc
-COPY --from=origin-cli /usr/bin/kustomize /usr/bin/kustomize
+COPY --from=kustomize /usr/bin/kustomize /usr/bin/kustomize
 
 ENV OUTPUT_DIR=/tmp/output
 EXPOSE 8080
