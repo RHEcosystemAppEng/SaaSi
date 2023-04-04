@@ -3,7 +3,7 @@ module github.com/RHEcosystemAppEng/SaaSi/deployer/app-deployer
 go 1.19
 
 require (
-	github.com/RHEcosystemAppEng/SaaSi/deployer/deployer-lib v0.0.0-00010101000000-000000000000
+	github.com/RHEcosystemAppEng/SaaSi/deployer/deployer-lib v0.0.0-20230323094530-5efe7db927a6
 	github.com/gorilla/mux v1.8.0
 	github.com/sirupsen/logrus v1.9.0
 	gopkg.in/yaml.v2 v2.4.0
@@ -52,4 +52,4 @@ require (
 	sigs.k8s.io/yaml v1.3.0 // indirect
 )
 
-replace github.com/RHEcosystemAppEng/SaaSi/deployer/deployer-lib => ../deployer-lib
+// replace github.com/RHEcosystemAppEng/SaaSi/deployer/deployer-lib => ../deployer-lib
