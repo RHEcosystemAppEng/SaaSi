@@ -2,7 +2,9 @@ module github.com/RHEcosystemAppEng/SaaSi/saasi
 
 go 1.19
 
-require github.com/RHEcosystemAppEng/SaaSi/exporter/exporter-lib v0.0.0-20230316154716-5509f04d3ac0
+require github.com/RHEcosystemAppEng/SaaSi/exporter/exporter-lib v0.0.0-20230411122958-9b253356b237
+
+// replace github.com/RHEcosystemAppEng/SaaSi/exporter/exporter-lib => ../exporter/exporter-lib
 
 require (
 	github.com/davecgh/go-spew v1.1.1 // indirect

@@ -11,6 +11,11 @@ func main() {
 	logger := utils.GetLogger(config.Debug)
 	utils.PrettyPrint(logger, "Runtime configuration: %s", config)
 	exporterConfig := config.ReadExporterConfig()
+	exporterConfig.InitializeForCLI()
+	err := exporterConfig.Validate()
+	if err != nil {
+		logger.Fatalf("Invalid configuration: %s", err)
+	}
 	utils.PrettyPrint(logger, "Export configuration: %s", exporterConfig)
 
 	exporter := export.NewExporterFromConfig(config)
