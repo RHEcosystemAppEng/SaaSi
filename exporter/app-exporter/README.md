@@ -38,6 +38,8 @@ You can test the application by creating a `Pod` and the `Route` to access it on
 oc apply -f resources.yaml
 ```
 
+**Note**: you need to update the AWS and S3 settings using the [noobaa-init.sh](../../s3store/noobaa-init.sh) script before.
+
 To log the execution:
 ```bash
 oc logs -f saasi-app-exporter
@@ -58,16 +60,19 @@ Returns the status of the application:
 {"Name":"app-exporter","Version":"0.1","Status":"up"}
 ```
 
+TODO ADD {uid}
 ### POST /export/application
 Executes an export request. It expects an input following the schema presented in the [examples](../../examples/) folder for the exporter applications:
 ```json
 {
   "cluster": {
+    "uid": "CONFIGURATION_UID",
     "clusterId": UNIQUE_ID,
     "server": SERVER_HOST,
     "token": VALID_TOKEN
   },
   "application": {
+    "uid": "CONFIGURATION_UID",
     "name": APPLICATION_NAME,
     "namespaces": [
       {
@@ -82,17 +87,21 @@ Executes an export request. It expects an input following the schema presented i
 The output contains the export status and the information to locate the exported installer:
 ```json
 {
-  "applicationName": APPLICATION_NAME,
+  "uid": "EXECUTION_UID"
+  "applicationName": "APPLICATION_NAME",
   "status": "ok",
   "errorMessage":"",
-  "location": OUTPUT_FOLDER
+  "location": "OUTPUT_FOLDER"
 }
 ```
+
+**Note**: The `location` folder is using the S3 protocol format, as in `s3://export/applications/CONFIG-UID/EXECUTION-UID`
 
 Errors are either managed by standard HTTP status codes (e.g. `404 Not Found` or `405 Method Not Allowed`) or reported as the `failed` values in the `status` field, as in:
 ```json
 {
-  "applicationName": "",
+  "uid": ""
+  "applicationName": "APPLICATION_NAME",
   "status": "failed",
   "errorMessage":
   "Invalid configuration: missing cluster configuration",
