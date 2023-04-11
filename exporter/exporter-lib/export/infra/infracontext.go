@@ -8,7 +8,7 @@ import (
 
 	"github.com/RHEcosystemAppEng/SaaSi/exporter/exporter-lib/config"
 	"github.com/RHEcosystemAppEng/SaaSi/exporter/exporter-lib/connect"
-	"github.com/RHEcosystemAppEng/SaaSi/exporter/exporter-lib/context"
+	ctx "github.com/RHEcosystemAppEng/SaaSi/exporter/exporter-lib/context"
 	"github.com/RHEcosystemAppEng/SaaSi/exporter/exporter-lib/export/utils"
 	"github.com/sirupsen/logrus"
 )
@@ -18,7 +18,7 @@ const (
 )
 
 type InfraContext struct {
-	context.ExporterContext
+	ctx.ExporterContext
 
 	clusterConfig *config.ClusterConfig
 	ClusterFolder string
@@ -40,6 +40,11 @@ func NewInfraContextFromConfig(config *config.Config, clusterConfig *config.Clus
 		log.Fatalf("Cannot copy embedded scripts infra to temporary directory: %s", err)
 	}
 	context.ExportScript = filepath.Join(context.scriptFolder, "exporter.sh")
-	context.ClusterFolder = filepath.Join(context.OutputFolder, ClustersFolder, clusterConfig.ClusterId)
+	context.ClusterFolder = filepath.Join(context.OutputFolder, ctx.ExportFolder, ClustersFolder, clusterConfig.Uid)
 	return &context
+}
+
+func (c *InfraContext) InitClusterFolderForUid(uid string) string {
+	c.ClusterFolder = filepath.Join(c.ClusterFolder, uid)
+	return c.ClusterFolder
 }

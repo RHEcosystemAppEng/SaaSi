@@ -12,6 +12,10 @@ import (
 	"k8s.io/client-go/rest"
 )
 
+const (
+	ExportFolder = "export"
+)
+
 type Context interface {
 	RootFolder() string
 }

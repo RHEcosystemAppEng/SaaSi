@@ -3,6 +3,7 @@ module github.com/RHEcosystemAppEng/SaaSi/exporter/exporter-lib
 go 1.19
 
 require (
+	github.com/google/uuid v1.1.2
 	github.com/konveyor/crane v0.0.6-0.20230307141941-d14f18b72923
 	github.com/openshift/api v0.0.0-20221209105451-d85cfcef97b7
 	github.com/sirupsen/logrus v1.8.1
@@ -33,7 +34,6 @@ require (
 	github.com/google/go-cmp v0.5.9 // indirect
 	github.com/google/gofuzz v1.2.0 // indirect
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510 // indirect
-	github.com/google/uuid v1.1.2 // indirect
 	github.com/gregjones/httpcache v0.0.0-20180305231024-9cad4c3443a7 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/imdario/mergo v0.3.12 // indirect

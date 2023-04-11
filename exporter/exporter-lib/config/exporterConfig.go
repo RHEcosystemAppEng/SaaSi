@@ -25,12 +25,14 @@ type ExporterConfig struct {
 }
 
 type ClusterConfig struct {
+	Uid       string `yaml:"uid"`
 	ClusterId string `yaml:"clusterId"`
 	Server    string `yaml:"server"`
 	Token     string `yaml:"token"`
 }
 
 type ApplicationConfig struct {
+	Uid        string            `yaml:"uid"`
 	Name       string            `yaml:"name"`
 	Namespaces []SourceNamespace `yaml:"namespaces"`
 }
@@ -96,6 +98,9 @@ func (c *ClusterConfig) ValidateClusterConfig() error {
 	if reflect.ValueOf(c).IsZero() {
 		return errors.New("missing cluster configuration")
 	} else {
+		if c.Uid == "" {
+			return errors.New("missing cluster uid configuration")
+		}
 		if c.ClusterId == "" {
 			return errors.New("missing clusterId configuration")
 		}
@@ -107,6 +112,15 @@ func (c *ClusterConfig) ValidateClusterConfig() error {
 		}
 	}
 	return nil
+}
+
+func (e *ExporterConfig) InitializeForCLI() {
+	if e.Cluster.Uid == "" {
+		e.Cluster.Uid = e.Application.Name
+	}
+	if e.Application.Uid == "" {
+		e.Application.Uid = e.Application.Name
+	}
 }
 
 func (e *ExporterConfig) Validate() error {
@@ -121,6 +135,9 @@ func (e *ExporterConfig) Validate() error {
 	if reflect.ValueOf(e.Application).IsZero() {
 		return errors.New("missing application configuration")
 	} else {
+		if e.Application.Uid == "" {
+			return errors.New("missing application uid configuration")
+		}
 		if e.Application.Name == "" {
 			return errors.New("missing application name configuration")
 		}
