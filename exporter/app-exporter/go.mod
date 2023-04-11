@@ -2,14 +2,20 @@ module github.com/RHEcosystemAppEng/SaaSi/exporter/app-exporter
 
 go 1.19
 
+// replace github.com/RHEcosystemAppEng/SaaSi/s3store => ../../s3store
+
+// replace github.com/RHEcosystemAppEng/SaaSi/exporter/exporter-lib => ../exporter-lib
+
 require (
-	github.com/RHEcosystemAppEng/SaaSi/exporter/exporter-lib v0.0.0-20230316154716-5509f04d3ac0
+	github.com/RHEcosystemAppEng/SaaSi/exporter/exporter-lib v0.0.0-20230411123549-d7aa82b31638
+	github.com/RHEcosystemAppEng/SaaSi/s3store v0.0.0-20230411121546-dde43cbe76e3
 	github.com/gorilla/mux v1.8.0
-	github.com/sirupsen/logrus v1.8.1
+	github.com/sirupsen/logrus v1.9.0
 	gopkg.in/yaml.v2 v2.4.0
 )
 
 require (
+	github.com/aws/aws-sdk-go v1.44.227 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/emicklei/go-restful/v3 v3.9.0 // indirect
 	github.com/evanphx/json-patch v4.12.0+incompatible // indirect
@@ -33,6 +39,7 @@ require (
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/imdario/mergo v0.3.12 // indirect
 	github.com/inconshreveable/mousetrap v1.0.1 // indirect
+	github.com/jmespath/go-jmespath v0.4.0 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/konveyor/crane v0.0.6-0.20230307141941-d14f18b72923 // indirect
