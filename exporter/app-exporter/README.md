@@ -60,7 +60,6 @@ Returns the status of the application:
 {"Name":"app-exporter","Version":"0.1","Status":"up"}
 ```
 
-TODO ADD {uid}
 ### POST /export/application
 Executes an export request. It expects an input following the schema presented in the [examples](../../examples/) folder for the exporter applications:
 ```json
@@ -95,7 +94,7 @@ The output contains the export status and the information to locate the exported
 }
 ```
 
-**Note**: The `location` folder is using the S3 protocol format, as in `s3://export/applications/CONFIG-UID/EXECUTION-UID`
+**Note**: The `location` folder is using the S3 protocol format, as in `s3://export/applications/CONFIGURATION_UID/EXECUTION-UID`
 
 Errors are either managed by standard HTTP status codes (e.g. `404 Not Found` or `405 Method Not Allowed`) or reported as the `failed` values in the `status` field, as in:
 ```json

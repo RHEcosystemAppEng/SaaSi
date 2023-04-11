@@ -38,6 +38,9 @@ You can test the application by creating a `Pod` and the `Route` to access it on
 oc apply -f resources.yaml
 ```
 
+**Note**: you need to update the AWS and S3 settings using the [noobaa-init.sh](../../s3store/noobaa-init.sh) script before.
+
+
 To log the execution:
 ```bash
 oc logs -f saasi-infra-exporter
@@ -62,6 +65,7 @@ Returns the status of the application:
 Executes an export request. It expects an input following the schema presented in the [examples](../../examples/) folder for the infra exporters:
 ```json
 {
+  "uid": "CONFIGURATION_UID",
   "clusterId": CLUSTER_ID,
   "server": SERVER_HOST,
   "token": VALID_TOKEN
@@ -71,6 +75,7 @@ Executes an export request. It expects an input following the schema presented i
 The output contains the export status and the information to locate the exported installer:
 ```json
 {
+  "uid": "EXECUTION_UID"
   "clusterId": CLUSTER_ID,
   "status": "ok",
   "errorMessage":"",
@@ -78,9 +83,12 @@ The output contains the export status and the information to locate the exported
 }
 ```
 
+**Note**: The `location` folder is using the S3 protocol format, as in `s3://export/clusters/CONFIGURATION_UID/EXECUTION-UID`
+
 Errors are either managed by standard HTTP status codes (e.g. `404 Not Found` or `405 Method Not Allowed`) or reported as the `failed` values in the `status` field, as in:
 ```json
 {
+  "uid": ""
   "clusterId": "",
   "status": "failed",
   "errorMessage":

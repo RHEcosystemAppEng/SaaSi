@@ -12,6 +12,16 @@ spec:
     env:
     - name: OUTPUT_DIR
       value: /tmp/output
+    - name: DEBUG
+      value: 'true'
+    - name: AWS_ACCESS_KEY_ID
+      value: AWS_ACCESS_KEY_ID
+    - name: AWS_SECRET_ACCESS_KEY
+      value: AWS_SECRET_ACCESS_KEY/o6v4j4424eSU
+    - name: S3_ENDPOINT
+      value: S3_ENDPOINT
+    - name: S3_REGION
+      value: S3_REGION
     ports:
     - containerPort: 8080
       protocol: TCP
