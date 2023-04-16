@@ -122,7 +122,7 @@ func (pkg *ApplicationPkg) generateNsArtifact(ns config.Namespaces) {
 	source := filepath.Join(pkg.DeployerContext.GetRootSourceDir(), APPLICATION_DIR, pkg.AppConfig.Name, KUSTOMIZE_DIR, ns.Name)
 	// create pkg template at pkg template path
 	cmd := exec.Command("cp", "-r", source, pkg.KustomizeDir)
-	if err := cmd.Run(); err != nil {
+	if err = cmd.Run(); err != nil {
 		pkg.DeployerContext.GetLogger().Errorf("Failed to generate kustomize template for namespace: %s", ns.Name)
 		pkg.Error = err
 	}

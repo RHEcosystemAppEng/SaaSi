@@ -12,9 +12,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-var (
-	err error
-)
+var err error
 
 type ApplicationOutput struct {
 	ApplicationName string `json:"applicationName"`

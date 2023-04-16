@@ -12,10 +12,6 @@ import (
 	"github.com/kr/pretty"
 )
 
-var (
-	err error
-)
-
 func main() {
 
 	// get flag variables

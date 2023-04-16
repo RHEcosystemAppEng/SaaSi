@@ -63,7 +63,7 @@ func ParseFlags() *Args {
 	args := Args{}
 
 	// parse input arguments from os into args config
-	_, err := flags.Parse(&args)
+	_, err = flags.Parse(&args)
 	if err != nil {
 		log.Fatal("Failed to parse os input arguments")
 	}

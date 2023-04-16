@@ -7,9 +7,7 @@ import (
 	"github.com/RHEcosystemAppEng/SaaSi/deployer/deployer-lib/utils"
 )
 
-var (
-	err error
-)
+var err error
 
 func DeployApplication(pkg *packager.ApplicationPkg) error {
 
