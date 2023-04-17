@@ -1,0 +1,66 @@
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: saasi
+---
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: saasi-deployer
+  labels:
+    app: saasi-deployer
+spec:
+  selector:
+    matchLabels:
+      app: saasi-deployer
+  replicas: 1
+  serviceAccountName: saasi
+  template:
+    metadata:
+      labels:
+        app: saasi-deployer
+    spec:
+      containers:
+      - name: saasi-app-deployer
+        env:
+        - name: OUTPUT_DIR
+          value: /tmp/output
+        - name: SOURCE_DIR
+          value: /tmp/input
+        - name: PORT
+          value: "8181"
+        ports:
+        - containerPort: 8181
+          protocol: TCP
+        image: 'quay.io/ecosystem-appeng/saasi-app-deployer:0.1'
+        imagePullPolicy: Always
+        resources:
+          limits:
+            cpu: '300m'
+            memory: '500Mi'
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: saasi-deployer
+spec:
+  ports:
+  - name: app
+    port: 8181
+    protocol: TCP
+    targetPort: 8181
+  selector:
+    app: saasi-deployer
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: saasi-app-deployer
+spec:
+  path: /deployer/application
+  port:
+    targetPort: 8181
+  to:
+    kind: Service
+    name: saasi-deployer
