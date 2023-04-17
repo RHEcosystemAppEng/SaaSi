@@ -33,11 +33,17 @@ func NewAppContextFromConfig(config *config.Config, exporterConfig *config.Expor
 	appContext := AppContext{AppConfig: &exporterConfig.Application}
 
 	appContext.InitFromConfig(config, connectionStatus, logger, config.Debug)
-	appContext.AppFolder = filepath.Join(appContext.OutputFolder, ApplicationsFolder, appContext.AppConfig.Name)
+	appContext.AppFolder = filepath.Join(appContext.OutputFolder, context.ExportFolder, ApplicationsFolder, exporterConfig.Application.Uid)
 
 	return &appContext
 }
+
 func (c *AppContext) RootFolder() string {
+	return c.AppFolder
+}
+
+func (c *AppContext) InitAppFolderForUid(uid string) string {
+	c.AppFolder = filepath.Join(c.AppFolder, uid)
 	return c.AppFolder
 }
 

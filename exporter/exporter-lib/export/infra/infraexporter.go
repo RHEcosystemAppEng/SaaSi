@@ -4,6 +4,7 @@ import (
 	"github.com/RHEcosystemAppEng/SaaSi/exporter/exporter-lib/config"
 	"github.com/RHEcosystemAppEng/SaaSi/exporter/exporter-lib/connect"
 	"github.com/RHEcosystemAppEng/SaaSi/exporter/exporter-lib/export/utils"
+	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
 )
 
@@ -12,6 +13,7 @@ type InfraExporter struct {
 }
 
 type InfraExporterOutput struct {
+	Uid          string `json:"uid"`
 	ClusterId    string `json:"clusterId"`
 	Status       string `json:"status"`
 	ErrorMessage string `json:"errorMessage"`
@@ -26,6 +28,8 @@ func NewInfraExporterFromConfig(config *config.Config, clusterConfig *config.Clu
 
 func (e *InfraExporter) Export() InfraExporterOutput {
 	output := InfraExporterOutput{ClusterId: e.infraContext.clusterConfig.ClusterId}
+	output.Uid = uuid.New().String()
+	e.infraContext.InitClusterFolderForUid(output.Uid)
 	err := utils.RunCommandAndLog(e.infraContext.Logger(), e.infraContext.ExportScript, "-k", e.infraContext.KubeConfigPath(),
 		"-i", e.infraContext.clusterConfig.ClusterId, "-r", e.infraContext.ClusterFolder)
 	if err != nil {

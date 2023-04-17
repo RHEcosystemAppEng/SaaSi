@@ -10,6 +10,7 @@ import (
 	"github.com/RHEcosystemAppEng/SaaSi/exporter/exporter-lib/config"
 	"github.com/RHEcosystemAppEng/SaaSi/exporter/exporter-lib/connect"
 	"github.com/RHEcosystemAppEng/SaaSi/exporter/exporter-lib/export/utils"
+	"github.com/google/uuid"
 	"github.com/konveyor/crane/cmd/apply"
 	"github.com/konveyor/crane/cmd/export"
 	"github.com/konveyor/crane/cmd/transform"
@@ -23,6 +24,7 @@ type AppExporter struct {
 }
 
 type AppExporterOutput struct {
+	Uid             string `json:"uid"`
 	ApplicationName string `json:"applicationName"`
 	Status          string `json:"status"`
 	ErrorMessage    string `json:"errorMessage"`
@@ -38,6 +40,9 @@ func NewAppExporterFromConfig(config *config.Config, exporterConfig *config.Expo
 
 func (e *AppExporter) Export() AppExporterOutput {
 	output := AppExporterOutput{ApplicationName: e.appContext.AppConfig.Name}
+	output.Uid = uuid.New().String()
+	e.appContext.InitAppFolderForUid(output.Uid)
+
 	err := e.PrepareOutput()
 	if err != nil {
 		output.ErrorMessage = err.Error()

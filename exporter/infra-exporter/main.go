@@ -6,12 +6,16 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strconv"
+	"time"
 
 	"github.com/RHEcosystemAppEng/SaaSi/exporter/exporter-lib/config"
 	"github.com/RHEcosystemAppEng/SaaSi/exporter/exporter-lib/connect"
+	"github.com/RHEcosystemAppEng/SaaSi/exporter/exporter-lib/context"
 	"github.com/RHEcosystemAppEng/SaaSi/exporter/exporter-lib/export/infra"
 	"github.com/RHEcosystemAppEng/SaaSi/exporter/exporter-lib/export/utils"
+	"github.com/RHEcosystemAppEng/SaaSi/s3store/s3filemanager"
 	"github.com/gorilla/mux"
 	"github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v2"
@@ -94,6 +98,14 @@ func (e *InfraExporterService) export(rw http.ResponseWriter, req *http.Request)
 
 			infraExporter := infra.NewInfraExporterFromConfig(e.config, clusterConfig, connectionStatus, e.logger)
 			output := infraExporter.Export()
+			location, err := e.uploadToS3(&output)
+			if err != nil {
+				message := fmt.Sprintf("Cannot upload to S3 store: %s", err.Error())
+				e.logger.Errorf("Output is: %v", output)
+				http.Error(rw, message, http.StatusUnprocessableEntity)
+				return
+			}
+			output.Location = location
 			yamlOutput, err := json.Marshal(output)
 			if err != nil {
 				message := fmt.Sprintf("Cannot marshal response output to expected model: %s", err.Error())
@@ -113,7 +125,31 @@ func (e *InfraExporterService) export(rw http.ResponseWriter, req *http.Request)
 		return
 	}
 }
+func (e *InfraExporterService) uploadToS3(output *infra.InfraExporterOutput) (string, error) {
+	sess, err := s3filemanager.ConnectWithEnvVariables()
+	if err != nil {
+		e.logger.Errorf("Cannot connect S3 store: %s", err.Error())
+		return "", err
+	}
+	e.logger.Info("Connected S3 session")
 
+	start := time.Now()
+	bucket := "export"
+	exportFolder := output.Location
+	prefix, err := filepath.Rel(filepath.Join(e.config.RootOutputFolder, context.ExportFolder), output.Location)
+	if err != nil {
+		return "", err
+	}
+	e.logger.Debugf("Exporting %v with prefix %s", output, prefix)
+	uploader := s3filemanager.NewS3FolderUploader(bucket, exportFolder, e.logger).WithPrefix(prefix)
+	err = uploader.Run(sess)
+	elapsed := time.Since(start)
+	e.logger.Debugf("Uploaded to S3 store completed in %s", elapsed)
+	if err != nil {
+		return "", err
+	}
+	return fmt.Sprintf("s3://%s/%s", bucket, prefix), nil
+}
 func (e *InfraExporterService) handleError(message string, err error, rw http.ResponseWriter, clusterConfig *config.ClusterConfig) {
 	message = fmt.Sprintf(message, err.Error())
 	e.logger.Errorf(message)
