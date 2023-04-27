@@ -2,6 +2,7 @@ package app
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/RHEcosystemAppEng/SaaSi/deployer/deployer-lib/config"
 	"github.com/RHEcosystemAppEng/SaaSi/deployer/deployer-lib/connect"
@@ -14,6 +15,8 @@ import (
 
 var err error
 
+const DEFAULT_APP_NAME = "unknown"
+
 type ApplicationOutput struct {
 	ApplicationName string `json:"applicationName"`
 	Status          string `json:"status"`
@@ -22,11 +25,15 @@ type ApplicationOutput struct {
 }
 
 func Deploy(componentConfig config.ComponentConfig, args *config.Args, logger *logrus.Logger) *ApplicationOutput {
-	applicationName := componentConfig.ApplicationConfig.Name
+	applicationName := DEFAULT_APP_NAME
 
 	// validate deployemnt data
-	err = componentConfig.Validate()
+	err = componentConfig.ValidateForAppDeployment()
 	if err != nil {
+		if !strings.Contains(err.Error(), "missing application") {
+			applicationName = componentConfig.ApplicationConfig.Name
+		}
+
 		return &ApplicationOutput{
 			ApplicationName: applicationName,
 			Status:          utils.Failed.String(),
@@ -34,6 +41,8 @@ func Deploy(componentConfig config.ComponentConfig, args *config.Args, logger *l
 			Location:        "",
 		}
 	}
+
+	applicationName = componentConfig.ApplicationConfig.Name
 
 	// connect to cluster
 	kubeConnection := connect.ConnectToCluster(componentConfig.ClusterConfig, logger)

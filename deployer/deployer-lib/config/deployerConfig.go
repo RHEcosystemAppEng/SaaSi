@@ -117,7 +117,7 @@ func InitDeployerConfig(configFile string) *ComponentConfig {
 	return &config.Deployer
 }
 
-func (e *ComponentConfig) Validate() error {
+func (e *ComponentConfig) ValidateForAppDeployment() error {
 
 	// init list of missing parameters
 	var missingParams []string
@@ -143,6 +143,51 @@ func (e *ComponentConfig) Validate() error {
 	} else {
 		if e.ApplicationConfig.Name == "" {
 			missingParams = append(missingParams, "missing application name configuration")
+		}
+	}
+
+	// if missing parameters exist, join listings and send as error
+	if len(missingParams) > 0 {
+		return errors.New(strings.Join(missingParams, ", "))
+	}
+
+	return nil
+}
+
+func (e *ComponentConfig) ValidateForInfraDeployment() error {
+
+	// init list of missing parameters
+	var missingParams []string
+
+	// validate cluster parameters
+	if reflect.ValueOf(e.ClusterConfig).IsZero() {
+		missingParams = append(missingParams, "missing cluster configuration")
+	} else {
+		if e.ClusterConfig.ClusterId == "" {
+			missingParams = append(missingParams, "missing clusterId configuration")
+		}
+		if reflect.ValueOf(e.ClusterConfig.Params).IsZero() {
+			missingParams = append(missingParams, "missing clusterParams configuration")
+		} else {
+			if e.ClusterConfig.Params.ClusterName == "" {
+				missingParams = append(missingParams, "missing clusterName configuration")
+			}
+		}
+		if reflect.ValueOf(e.ClusterConfig.Aws).IsZero() {
+			missingParams = append(missingParams, "missing aws configuration")
+		} else {
+			if e.ClusterConfig.Aws.AwsPublicDomain == "" {
+				missingParams = append(missingParams, "missing awsPublicDomain configuration")
+			}
+			if e.ClusterConfig.Aws.AwsAccountName == "" {
+				missingParams = append(missingParams, "missing awsAccountName configuration")
+			}
+			if e.ClusterConfig.Aws.AwsAccessKeyId == "" {
+				missingParams = append(missingParams, "missing awsAccessKeyId configuration")
+			}
+			if e.ClusterConfig.Aws.AwsSecretAccessKey == "" {
+				missingParams = append(missingParams, "missing awsSecretAccessKey configuration")
+			}
 		}
 	}
 

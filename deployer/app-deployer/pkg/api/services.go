@@ -46,7 +46,7 @@ func deploy(args *config.Args, logger *logrus.Logger) http.HandlerFunc {
 			http.Error(rw, message, http.StatusUnprocessableEntity)
 			return
 		}
-		logger.Infof("Running export request: %# v", string(reqBody))
+		logger.Infof("Running application deployment request: %# v", string(reqBody))
 
 		output := app.Deploy(deployerConfig.Deployer, args, logger)
 
