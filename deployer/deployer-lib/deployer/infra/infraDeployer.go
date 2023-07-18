@@ -2,8 +2,11 @@ package infra
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/RHEcosystemAppEng/SaaSi/deployer/deployer-lib/config"
+	"github.com/RHEcosystemAppEng/SaaSi/deployer/deployer-lib/context"
+	"github.com/RHEcosystemAppEng/SaaSi/deployer/deployer-lib/deployer/infra/provisioner"
 	"github.com/RHEcosystemAppEng/SaaSi/deployer/deployer-lib/utils"
 	"github.com/sirupsen/logrus"
 )
@@ -25,6 +28,10 @@ func Deploy(componentConfig config.ComponentConfig, args *config.Args, logger *l
 	// validate deployemnt data
 	err = componentConfig.ValidateForInfraDeployment()
 	if err != nil {
+		if !strings.Contains(err.Error(), "missing clusterId configuration") {
+			clusterId = componentConfig.ClusterConfig.ClusterId
+		}
+
 		return &InfrastructureOutput{
 			ClusterId:    clusterId,
 			Status:       utils.Failed.String(),
@@ -34,6 +41,21 @@ func Deploy(componentConfig config.ComponentConfig, args *config.Args, logger *l
 	}
 
 	clusterId = componentConfig.ClusterConfig.ClusterId
+
+	// create infra context to hold global build parameters
+	infraContext := context.InitInfraContext(args, logger)
+	logger.Infof("DEBUG - clusterId: %v", infraContext)
+
+	// provision cluster
+	newClusterDetails := provisioner.ProvisionCluster(infraContext, &componentConfig.ClusterConfig.Params, componentConfig.ClusterConfig.Aws)
+	if newClusterDetails.Error != nil {
+		return &InfrastructureOutput{
+			ClusterId:    clusterId,
+			Status:       utils.Failed.String(),
+			ErrorMessage: fmt.Sprintf("Failed to provision cluster %s: %s", clusterId, err.Error()),
+			Location:     "",
+		}
+	}
 
 	return &InfrastructureOutput{
 		ClusterId:    clusterId,

@@ -14,7 +14,7 @@ import (
 	"github.com/RHEcosystemAppEng/SaaSi/deployer/deployer-lib/deployer/infra/ansible"
 )
 
-func ProvisionCluster(infraCtx *context.InfraContext, customParams *config.ClusterParams, awsCredentials config.AwsSettings, sourceDirRoot string) ansible.PlayBookResults {
+func ProvisionCluster(infraCtx *context.InfraContext, customParams *config.ClusterParams, awsCredentials config.AwsSettings) ansible.PlayBookResults {
 	playbook := &ansible.Playbook{
 		Name:                   "ocp_lab_provisioner",
 		Path:                   path.Join(infraCtx.AnsiblePlaybookPath, "site.yaml"),
@@ -22,18 +22,11 @@ func ProvisionCluster(infraCtx *context.InfraContext, customParams *config.Clust
 		RenderedTemplatePath:   "",
 	}
 	// get clusters directory for fetching them assembled default configuration from source cluster.
-	inputClusterDirectory := filepath.Join(sourceDirRoot, infraCtx.SourceClustersDir)
+	inputClusterDirectory := infraCtx.SourceClustersDir
 	//find env file in input clusters directory
 	envFilePath := findClusterEnvironmentFile(inputClusterDirectory)
-	workingDir, err := os.Getwd()
-	if err != nil {
-		log.Fatalf("Error getting current working directory in order to calculate full path of cluster environment file, Error : %s ", err)
-		//return ansible.PlayBookResults{}, errors.New("Failed Openning current working directory")
-	}
-	//calculate full env file path
-	fullEnvFilePath := filepath.Join(workingDir, envFilePath)
 
-	playbook.ParseDefaultEnvFile(fullEnvFilePath)
+	playbook.ParseDefaultEnvFile(envFilePath)
 
 	customParametersPath := playbook.BuildCustomParameters(*customParams, infraCtx.InfraRootDir)
 	playbook.OverrideParametersPath = customParametersPath
@@ -41,7 +34,7 @@ func ProvisionCluster(infraCtx *context.InfraContext, customParams *config.Clust
 	playbook.OverrideParametersWithCustoms(awsCredentials)
 
 	//Render template according to environment variables that were set.
-	playbook.RenderTemplate(infraCtx.ScriptPath, fullEnvFilePath, customParametersPath, infraCtx)
+	playbook.RenderTemplate(infraCtx.ScriptPath, envFilePath, customParametersPath, infraCtx)
 	//Need full path for rendered Template
 	playbook.RenderedTemplatePath = filepath.Join(infraCtx.InfraRootDir, playbook.RenderedTemplatePath)
 	// Copy rendered input file to playbook directory and update renderedTemplatePath to this new location

@@ -48,9 +48,10 @@ func deploy(args *config.Args, logger *logrus.Logger) http.HandlerFunc {
 		}
 		logger.Infof("Running infrasructure deployment request: %# v", string(reqBody))
 
-		output := infra.Deploy(deployerConfig.Deployer, args, logger)
+		// output := infra.Deploy(deployerConfig.Deployer, args, logger)
+		_ = infra.Deploy(deployerConfig.Deployer, args, logger)
 
-		handleResponse(rw, logger, output)
+		// handleResponse(rw, logger, output)
 	}
 }
 

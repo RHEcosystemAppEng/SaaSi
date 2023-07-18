@@ -1,3 +1,3 @@
 [submodule "openshift-playbook"]
-	path = deployer/infra/playbook
+	path = deployer/deployer-lib/deployer/infra/scripts/playbook
 	url = git@github.com:RHEcosystemAppEng/ocp_labs_provisioner.git

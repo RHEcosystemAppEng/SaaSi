@@ -8,6 +8,7 @@ type PlayBookResults struct {
 	ApiServer        string
 	KubeConfigPath   string
 	AdditionalFields map[string]string
+	Error            error
 }
 
 type PlaybookRunner interface {
